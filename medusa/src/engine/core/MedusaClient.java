@@ -293,9 +293,9 @@ public class MedusaClient extends GameInstance
 		}
 	}
 	
-	public void runClient()
+	@Override
+	public void setup()
 	{
-
 		// Try to establish a connection to the server by instantiating a server handler
 		gameServerHandler = new ServerHandler(new Socket());
 		
@@ -310,7 +310,10 @@ public class MedusaClient extends GameInstance
 			// if the connection was not successful, print a failure message before exiting
 			System.out.println("Connection to server failed.");
 		}
-		
+	}
+	
+	public void runClient()
+	{
 		PApplet.main("engine.core.MedusaClient");
 	}
 	

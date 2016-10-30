@@ -394,15 +394,19 @@ public class MedusaServer extends GameInstance
 		}
 	}
 	
-	/** Runs this game server */
-	public void runServer()
+	@Override
+	public void setup()
 	{
 		setUpGameObjects();
 		
 		ConnectionListener connectionListener = new ConnectionListener();
 		connectionListener.start();
 		gameLogicThread.start();
-		
+	}
+	
+	/** Runs this game server */
+	public void runServer()
+	{
 		PApplet.main("engine.core.MedusaServer");
 	}
 	

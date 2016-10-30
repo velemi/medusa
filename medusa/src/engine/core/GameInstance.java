@@ -6,6 +6,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import engine.objectModel.GameObject;
 import engine.objectModel.PlayerObject;
+import engine.objectModel.RenderableObject;
 import engine.objectModel.SpawnPoint;
 import processing.core.PApplet;
 
@@ -89,5 +90,33 @@ public abstract class GameInstance extends PApplet
 		}
 		
 		return result;
+	}
+	
+	/*
+	 * Defines PApplet settings for size() and smooth() values. (non-Javadoc)
+	 * @see processing.core.PApplet#settings()
+	 */
+	public void settings()
+	{
+		size(SCREEN_WIDTH, SCREEN_HEIGHT);
+	}
+	
+	/*
+	 * Defines behavior to be run once per animation frame of the PApplet.
+	 * (non-Javadoc)
+	 * @see processing.core.PApplet#draw()
+	 */
+	public void draw()
+	{
+		// render the frame & gameObjects
+		background(204);
+		
+		for (Map.Entry<UUID, GameObject> entry : gameObjectMap.entrySet()) {
+			GameObject object = entry.getValue();
+			
+			if(object instanceof RenderableObject) {
+				((RenderableObject) object).display(this);
+			}
+		}
 	}
 }

@@ -2,7 +2,6 @@ package engine.core;
 
 public class Timeline
 {
-	
 	// The Timeline object that this Timeline is anchored to. If null, the Timeline
 	// is assumed to be anchored to real time.
 	private Timeline anchorTimeline = null;
