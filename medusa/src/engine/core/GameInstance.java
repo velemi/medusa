@@ -1,5 +1,6 @@
 package engine.core;
 
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -60,6 +61,32 @@ public abstract class GameInstance extends PApplet
 		for(Map.Entry<UUID, GameObject> entry : gameObjectMap.entrySet()) {
 			if (entry.getValue().intersects(theObject)) {
 				result.put(entry.getKey(), entry.getValue().clone());
+			}
+		}
+		
+		return result;
+	}
+	
+	public ConcurrentHashMap<UUID, GameObject> getPhysicalCollisions(double x, double y)
+	{
+		ConcurrentHashMap<UUID, GameObject> result = new ConcurrentHashMap<UUID, GameObject>();
+		
+		for (Map.Entry<UUID, GameObject> entry : gameObjectMap.entrySet()) {
+			if (entry.getValue().contains(x, y) && entry.getValue().hasPhysicalCollision()) {
+				result.put(entry.getKey(), entry.getValue());
+			}
+		}
+		
+		return result;
+	}
+	
+	public ArrayList<GameObject> getPhysicalCollisions(double x, double y, double w, double h)
+	{
+		ArrayList<GameObject> result = new ArrayList<GameObject>();
+		
+		for (Map.Entry<UUID, GameObject> entry : gameObjectMap.entrySet()) {
+			if (entry.getValue().intersects(x, y, w, h) && entry.getValue().hasPhysicalCollision()) {
+				result.add(entry.getValue());
 			}
 		}
 		

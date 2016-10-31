@@ -60,6 +60,26 @@ public class GameObject extends Rectangle2D.Float implements Serializable, Clone
 		return objectID;
 	}
 	
+	public synchronized float topBorder()
+	{
+		return(this.y);
+	}
+	
+	public synchronized float bottomBorder()
+	{
+		return(this.y + this.height);
+	}
+	
+	public synchronized float leftBorder()
+	{
+		return(this.x);
+	}
+	
+	public synchronized float rightBorder()
+	{
+		return(this.x + this.width);
+	}
+	
 	/**
 	 * Gets the value of physicalCollision for this GameObject
 	 * 

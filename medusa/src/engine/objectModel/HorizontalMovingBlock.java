@@ -10,7 +10,7 @@ public class HorizontalMovingBlock extends Block implements MovingObject
 	
 	float hSpeed = 0;
 	
-	private int movementDirection = 1;
+	int movementDirection = 1;
 
 	public HorizontalMovingBlock(int sX, int sY)
 	{
@@ -18,15 +18,15 @@ public class HorizontalMovingBlock extends Block implements MovingObject
 	}
 
 	@Override
-	public synchronized void doMovement(GameInstance parent)
+	public synchronized void doPhysics(GameInstance parent)
 	{
 		hSpeed = movementSpeed * movementDirection;
 		
 		if (movementDirection > 0) {
-			if ((parent.checkForPhysicalCollision(x + hSpeed + width, y, 1, height)) 
+			if ((parent.checkForPhysicalCollision(this.rightBorder() + hSpeed + 1, y, 1, height)) 
 					|| (x + hSpeed + width - 1) > GameInstance.SCREEN_WIDTH) {
 				x = Math.round(x);
-				while((!parent.checkForPhysicalCollision(x + movementDirection + width + 1, y, 1, height))
+				while((!parent.checkForPhysicalCollision(this.rightBorder() + movementDirection + 1, y, 1, height))
 						&& (x + movementDirection + width - 1) < GameInstance.SCREEN_WIDTH) {
 					x += movementDirection;
 				}
@@ -35,10 +35,10 @@ public class HorizontalMovingBlock extends Block implements MovingObject
 				movementDirection = -1;
 			}
 		} else if (movementDirection < 0) {
-			if ((parent.checkForPhysicalCollision(x + hSpeed - 1, y, 1, height) ) 
+			if ((parent.checkForPhysicalCollision(this.leftBorder() + hSpeed - 1, y, 1, height) ) 
 					|| (x + hSpeed - 1) < 0) {
 				x = Math.round(x);
-				while((!parent.checkForPhysicalCollision(x + movementDirection
+				while((!parent.checkForPhysicalCollision(this.leftBorder() + movementDirection
 						- 1, y, 1, height)) && (x + movementDirection - 1) > 0) {
 					x += movementDirection;
 				}

@@ -4,5 +4,5 @@ import engine.core.GameInstance;
 
 public interface MovingObject
 {
-	public void doMovement(GameInstance parent);
+	public void doPhysics(GameInstance parent);
 }

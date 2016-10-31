@@ -1,5 +1,6 @@
 package engine.objectModel;
 
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -177,19 +178,31 @@ public class PlayerObject extends GameObject implements RenderableObject, Clonea
 	 */
 	private void handlePhysicalCollisions(GameInstance parent)
 	{
+		ArrayList<GameObject> standingOn = parent.getPhysicalCollisions(x, this.bottomBorder() + 1, width, 1);
+		
+		if(!standingOn.isEmpty()){
+			for (int i = 0; i < standingOn.size(); i++) {
+				GameObject floor = standingOn.get(i);
+				if (floor instanceof HorizontalMovingBlock) {
+					this.hSpeed += ((HorizontalMovingBlock) floor).movementSpeed
+							* ((HorizontalMovingBlock) floor).movementDirection;
+				} 
+			}
+		}
+		
 		// horizontal collision
 		if (movementDirection > 0) {
-			if (parent.checkForPhysicalCollision(x + hSpeed + width, y, 1, height)) {
-				x = Math.round(x);
-				while(!parent.checkForPhysicalCollision(x + movementDirection + width, y, 1, height)) {
+			if (parent.checkForPhysicalCollision(this.rightBorder() + hSpeed, y, 1, height)) {
+				//x = Math.round(x);
+				while(!parent.checkForPhysicalCollision(this.rightBorder() + movementDirection, y, 1, height)) {
 					x += movementDirection;
 				}
 				hSpeed = 0;
 			}
 		} else if (movementDirection < 0) {
-			if (parent.checkForPhysicalCollision(x + hSpeed - 1, y, 1, height)) {
-				x = Math.round(x);
-				while(!parent.checkForPhysicalCollision(x + movementDirection
+			if (parent.checkForPhysicalCollision(this.leftBorder() + hSpeed - 1, y, 1, height)) {
+				//x = Math.round(x);
+				while(!parent.checkForPhysicalCollision(this.leftBorder() + movementDirection
 						- 1, y, 1, height)) {
 					x += movementDirection;
 				}
@@ -197,25 +210,29 @@ public class PlayerObject extends GameObject implements RenderableObject, Clonea
 			}
 		}
 		
+		
+		
 		int vDirection = (int) Math.signum(vSpeed);
 		// vertical collision
 		if (vDirection > 0) {
-			if (parent.checkForPhysicalCollision(x, y + vSpeed + height, width, 1)) {
-				y = Math.round(y); 
-				while(!parent.checkForPhysicalCollision(x, y + vDirection + height, width, 1)) {
+			if (parent.checkForPhysicalCollision(x, this.bottomBorder() + vSpeed, width, 1)) {
+				//y = Math.round(y); 
+				while(!parent.checkForPhysicalCollision(x, this.bottomBorder() + vDirection, width, 1)) {
 					y += vDirection;
 				}
 				vSpeed = 0;
 			}
 		} else if (vDirection < 0) {
-			if (parent.checkForPhysicalCollision(x, y + vSpeed - 1, width, 1)) {
-				y = Math.round(y);
-				while(!parent.checkForPhysicalCollision(x, y + vDirection - 1, width, 1)) {
+			if (parent.checkForPhysicalCollision(x, this.topBorder() + vSpeed - 1, width, 1)) {
+				//y = Math.round(y);
+				while(!parent.checkForPhysicalCollision(x, this.topBorder() + vDirection - 1, width, 1)) {
 					y += vDirection;
 				}
 				vSpeed = 0;
 			}
 		}
+		
+		
 	}
 
 	private synchronized void handleNonPhysicalCollisions(GameInstance parent)
@@ -230,7 +247,7 @@ public class PlayerObject extends GameObject implements RenderableObject, Clonea
 	}
 	
 	/** Updates this PlayerObject's position based on its current state. */
-	public synchronized void doMovement(GameInstance parent)
+	public synchronized void doPhysics(GameInstance parent)
 	{
 		float sX = x;
 		float sY = y;

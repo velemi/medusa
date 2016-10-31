@@ -381,7 +381,7 @@ public class MedusaServer extends GameInstance
 						
 						if ((object instanceof MovingObject)
 								&& !(object instanceof PlayerObject)) {
-							((MovingObject) object).doMovement(client);
+							((MovingObject) object).doPhysics(client);
 						}
 					}
 				}

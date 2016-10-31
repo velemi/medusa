@@ -246,7 +246,7 @@ public class MedusaClient extends GameInstance
 		public void run()
 		{
 			while(true) {
-				playerObject.doMovement(client);
+				playerObject.doPhysics(client);
 				
 				// TODO Get rid of this throttling after implementing proper
 				// timing stuff
