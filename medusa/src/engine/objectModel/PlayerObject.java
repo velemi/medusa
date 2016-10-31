@@ -179,9 +179,9 @@ public class PlayerObject extends GameObject implements RenderableObject, Clonea
 	{
 		// horizontal collision
 		if (movementDirection > 0) {
-			if (parent.checkForPhysicalCollision(x + hSpeed + width - 1, y, 1, height)) {
+			if (parent.checkForPhysicalCollision(x + hSpeed + width, y, 1, height)) {
 				x = Math.round(x);
-				while(!parent.checkForPhysicalCollision(x + movementDirection + width - 1, y, 1, height)) {
+				while(!parent.checkForPhysicalCollision(x + movementDirection + width, y, 1, height)) {
 					x += movementDirection;
 				}
 				hSpeed = 0;
@@ -200,9 +200,9 @@ public class PlayerObject extends GameObject implements RenderableObject, Clonea
 		int vDirection = (int) Math.signum(vSpeed);
 		// vertical collision
 		if (vDirection > 0) {
-			if (parent.checkForPhysicalCollision(x, y + vSpeed + height - 1, width, 1)) {
+			if (parent.checkForPhysicalCollision(x, y + vSpeed + height, width, 1)) {
 				y = Math.round(y); 
-				while(!parent.checkForPhysicalCollision(x, y + vDirection + height - 1, width, 1)) {
+				while(!parent.checkForPhysicalCollision(x, y + vDirection + height, width, 1)) {
 					y += vDirection;
 				}
 				vSpeed = 0;
@@ -247,7 +247,7 @@ public class PlayerObject extends GameObject implements RenderableObject, Clonea
 			vSpeed += gravity;
 			
 		canJump = false;
-		if (parent.checkForPhysicalCollision(x, y + height, width, 1)) {
+		if (parent.checkForPhysicalCollision(x, y + height + 1, width, 1)) {
 			canJump = true;
 		}
 		

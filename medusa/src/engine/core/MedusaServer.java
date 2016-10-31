@@ -335,6 +335,8 @@ public class MedusaServer extends GameInstance
 			for (int i = 1; i < 11; i++) {
 				addToMap(new Block(i * 50, 300));
 			}
+			addToMap(new Block(50, 245));
+			addToMap(new Block(500, 245));
 			
 			// deathZones
 			for (int i = -2; i < 9; i++) {

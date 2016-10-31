@@ -118,7 +118,7 @@ public class MedusaClient extends GameInstance
 			{
 				try {
 					g = (Map<UUID, GameObject>) networkInput.readObject();
-					System.out.println("got g: "+g);
+					//System.out.println("got g: "+g);
 					g.remove(playerObject.getID());
 					
 					gameObjectMap.putAll(g);

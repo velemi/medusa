@@ -23,10 +23,10 @@ public class HorizontalMovingBlock extends Block implements MovingObject
 		hSpeed = movementSpeed * movementDirection;
 		
 		if (movementDirection > 0) {
-			if ((parent.checkForPhysicalCollision(x + hSpeed + width - 1, y, 1, height)) 
+			if ((parent.checkForPhysicalCollision(x + hSpeed + width, y, 1, height)) 
 					|| (x + hSpeed + width - 1) > GameInstance.SCREEN_WIDTH) {
 				x = Math.round(x);
-				while((!parent.checkForPhysicalCollision(x + movementDirection + width - 1, y, 1, height))
+				while((!parent.checkForPhysicalCollision(x + movementDirection + width + 1, y, 1, height))
 						&& (x + movementDirection + width - 1) < GameInstance.SCREEN_WIDTH) {
 					x += movementDirection;
 				}
