@@ -45,6 +45,6 @@ public class Block extends GameObject implements RenderableObject
 	{
 		parent.fill(0);
 		parent.stroke(100);
-		parent.rect(x, y, Block.DEFAULT_WIDTH, Block.DEFAULT_HEIGHT);
+		parent.rect(x, y, width, height);
 	}
 }

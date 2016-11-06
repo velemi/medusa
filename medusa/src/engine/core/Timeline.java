@@ -14,11 +14,16 @@ public class Timeline
 	
 	/** 
 	 * Constructor which creates a new Timeline object, anchored to real time, with the
-	 * specified tick size.
+	 * specified tick size (measured in nanoseconds).
 	 */
 	public Timeline(long tickSize)
 	{
-		this.origin = System.nanoTime();
+		this(0, tickSize);
+	}
+
+	public Timeline(long currentTime, long tickSize)
+	{
+		this.origin = System.nanoTime() - (currentTime * tickSize);
 		
 		this.tickSize = tickSize;
 	}
@@ -29,9 +34,15 @@ public class Timeline
 	 */
 	public Timeline(Timeline anchor, long tickSize)
 	{
-		this.anchorTimeline = anchor;
-		this.origin = anchor.getTime();
-		this.tickSize = tickSize;
+		if (anchor != null) {
+			this.anchorTimeline = anchor;
+			this.origin = anchor.getTime();
+			this.tickSize = tickSize;
+		}
+		else {
+			this.origin = System.nanoTime();
+			this.tickSize = tickSize;
+		}
 	}
 	
 	/**
@@ -49,5 +60,35 @@ public class Timeline
 		{
 			return (anchorTimeline.getTime() - this.origin) / this.tickSize;
 		}
+	}
+	
+	public Timeline getAnchorTimeline()
+	{
+		return anchorTimeline;
+	}
+
+	public void setAnchorTimeline(Timeline anchorTimeline)
+	{
+		this.anchorTimeline = anchorTimeline;
+	}
+
+	public long getOrigin()
+	{
+		return origin;
+	}
+
+	public void setOrigin(long origin)
+	{
+		this.origin = origin;
+	}
+
+	public long getTickSize()
+	{
+		return tickSize;
+	}
+
+	public void setTickSize(long tickSize)
+	{
+		this.tickSize = tickSize;
 	}
 }

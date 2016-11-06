@@ -15,6 +15,8 @@ public class HorizontalMovingBlock extends Block implements MovingObject
 	public HorizontalMovingBlock(int sX, int sY)
 	{
 		super(sX, sY);
+		
+		height = 10;
 	}
 
 	@Override

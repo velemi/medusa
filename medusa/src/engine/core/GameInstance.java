@@ -21,7 +21,16 @@ public abstract class GameInstance extends PApplet
 {
 	public static final boolean DEBUG = true;
 	
+	public static final int TARGET_FRAMERATE = 60;
+	
 	public static final int SCREEN_WIDTH = 800, SCREEN_HEIGHT = 800;
+	
+	/** The port number to be used by the server */
+	public static final int SERVER_PORT = 7734;
+	
+	long GVT;
+	
+	Timeline gameTimeline;
 	
 	ConcurrentHashMap<UUID, GameObject> gameObjectMap = new ConcurrentHashMap<UUID, GameObject>();
 	

@@ -16,7 +16,6 @@ import engine.network.NetworkHandler;
 import engine.objectModel.Block;
 import engine.objectModel.DeathZone;
 import engine.objectModel.PlayerObject;
-import engine.objectModel.RenderableObject;
 import engine.objectModel.SpawnPoint;
 import engine.objectModel.GameObject;
 import engine.objectModel.HorizontalMovingBlock;
@@ -31,9 +30,6 @@ import processing.core.PApplet;
 public class MedusaServer extends GameInstance
 {
 	public static final boolean DEBUG = GameInstance.DEBUG;
-	
-	/** The port number to be used by the server */
-	public static final int SERVER_PORT = 7734;
 	
 	/**
 	 * A thread which listens for incoming game client connections. Upon a
@@ -357,16 +353,16 @@ public class MedusaServer extends GameInstance
 		}
 	}
 	
-	private GameLogicThread gameLogicThread = new GameLogicThread(this);
+	private ServerLogicThread serverLogicThread = new ServerLogicThread(this);
 	
 	/** The thread which handles the game logic loop
 	 * 
 	 * @author Jordan Neal
 	 */
-	private class GameLogicThread extends Thread
+	private class ServerLogicThread extends Thread
 	{
 		GameInstance client;
-		public GameLogicThread(GameInstance client)
+		public ServerLogicThread(GameInstance client)
 		{
 			this.client = client;
 		}
@@ -392,6 +388,8 @@ public class MedusaServer extends GameInstance
 				} catch (InterruptedException e) {
 					e.printStackTrace();
 				}
+				
+//				System.out.println(System.nanoTime());
 			}
 		}
 	}
@@ -401,9 +399,11 @@ public class MedusaServer extends GameInstance
 	{
 		setUpGameObjects();
 		
+		gameTimeline = new Timeline(1000000L / TARGET_FRAMERATE);
+		
 		ConnectionListener connectionListener = new ConnectionListener();
 		connectionListener.start();
-		gameLogicThread.start();
+		serverLogicThread.start();
 	}
 	
 	/** Runs this game server */

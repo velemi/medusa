@@ -26,7 +26,7 @@ public class MedusaClient extends GameInstance
 {
 	public static final boolean 	DEBUG = GameInstance.DEBUG;
 	
-	private static final int 		SERVER_PORT = MedusaServer.SERVER_PORT;
+	UUID clientID = UUID.randomUUID();
 	
 	/** This game client's PlayerObject */
 	private PlayerObject playerObject;
@@ -229,22 +229,23 @@ public class MedusaClient extends GameInstance
 		gameServerHandler.queueMessage(message);
 	}
 	
-	private GameLogicThread gameLogicThread = new GameLogicThread(this);
+	private ClientLogicThread clientLogicThread = new ClientLogicThread(this);
 	
 	/** The thread which handles the game logic loop
 	 * 
 	 * @author Jordan Neal
 	 */
-	private class GameLogicThread extends Thread
+	private class ClientLogicThread extends Thread
 	{
 		GameInstance client;
-		public GameLogicThread(GameInstance client)
+		public ClientLogicThread(GameInstance client)
 		{
 			this.client = client;
 		}
 		
 		public void run()
 		{
+			
 			while(true) {
 				playerObject.doPhysics(client);
 				
@@ -255,6 +256,8 @@ public class MedusaClient extends GameInstance
 				} catch (InterruptedException e) {
 					e.printStackTrace();
 				}
+				
+//				System.out.println(System.nanoTime());
 			}
 		}
 	}
@@ -299,11 +302,14 @@ public class MedusaClient extends GameInstance
 		// Try to establish a connection to the server by instantiating a server handler
 		gameServerHandler = new ServerHandler(new Socket());
 		
+		// TODO remove this once timeline is being initialized from server
+		gameTimeline = new Timeline(1000000L / TARGET_FRAMERATE);
+		
 		if (gameServerHandler.connected) {
 			
 			// if the connection was successful, start server handler's threads, and logic thread
 			gameServerHandler.startThreads();
-			gameLogicThread.start();
+			clientLogicThread.start();
 			
 		} else {
 			
