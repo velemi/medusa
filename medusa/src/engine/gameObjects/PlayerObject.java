@@ -1,4 +1,4 @@
-package engine.objectModel;
+package engine.gameObjects;
 
 import java.util.ArrayList;
 import java.util.Map;

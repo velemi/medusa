@@ -1,4 +1,4 @@
-package engine.objectModel;
+package engine.gameObjects;
 
 public interface EffectOnContact
 {

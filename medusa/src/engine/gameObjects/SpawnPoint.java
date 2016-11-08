@@ -1,4 +1,4 @@
-package engine.objectModel;
+package engine.gameObjects;
 
 public class SpawnPoint extends GameObject
 {	

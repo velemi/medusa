@@ -11,10 +11,10 @@ import java.util.Map;
 import java.util.Scanner;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-import engine.objectModel.PlayerObject;
+import engine.gameObjects.GameObject;
+import engine.gameObjects.PlayerObject;
 import engine.network.DataPattern;
 import engine.network.NetworkHandler;
-import engine.objectModel.GameObject;
 import processing.core.PApplet;
 
 /**
@@ -249,13 +249,13 @@ public class MedusaClient extends GameInstance
 			while(true) {
 				playerObject.doPhysics(client);
 				
-				// TODO Get rid of this throttling after implementing proper
-				// timing stuff
-				try {
-					Thread.sleep(16);
-				} catch (InterruptedException e) {
-					e.printStackTrace();
-				}
+//				// Get rid of this throttling after implementing proper
+//				// timing stuff
+//				try {
+//					Thread.sleep(16);
+//				} catch (InterruptedException e) {
+//					e.printStackTrace();
+//				}
 				
 //				System.out.println(System.nanoTime());
 			}

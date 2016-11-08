@@ -5,10 +5,10 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import engine.objectModel.GameObject;
-import engine.objectModel.PlayerObject;
-import engine.objectModel.RenderableObject;
-import engine.objectModel.SpawnPoint;
+import engine.gameObjects.GameObject;
+import engine.gameObjects.PlayerObject;
+import engine.gameObjects.RenderableObject;
+import engine.gameObjects.SpawnPoint;
 import processing.core.PApplet;
 
 /**

@@ -11,15 +11,15 @@ import java.util.ArrayList;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import engine.gameObjects.Block;
+import engine.gameObjects.DeathZone;
+import engine.gameObjects.GameObject;
+import engine.gameObjects.HorizontalMovingBlock;
+import engine.gameObjects.MovingObject;
+import engine.gameObjects.PlayerObject;
+import engine.gameObjects.SpawnPoint;
 import engine.network.DataPattern;
 import engine.network.NetworkHandler;
-import engine.objectModel.Block;
-import engine.objectModel.DeathZone;
-import engine.objectModel.PlayerObject;
-import engine.objectModel.SpawnPoint;
-import engine.objectModel.GameObject;
-import engine.objectModel.HorizontalMovingBlock;
-import engine.objectModel.MovingObject;
 import processing.core.PApplet;
 
 /**

@@ -1,4 +1,4 @@
-package engine.objectModel;
+package engine.gameObjects;
 
 import java.awt.geom.Rectangle2D;
 import java.io.Serializable;
