@@ -2,7 +2,7 @@ package engine.gameEvents;
 
 import java.io.Serializable;
 
-public abstract class GameEvent implements Serializable
+public abstract class GameEvent implements Serializable, Comparable<GameEvent>
 {
 	private static final long serialVersionUID = 2310896639535068630L;
 	
@@ -13,6 +13,28 @@ public abstract class GameEvent implements Serializable
 	{
 		this.timeStamp = ts;
 		this.priority = p;
+	}
+	
+	@Override
+	public int compareTo(GameEvent o)
+	{
+		if(this.timeStamp == o.timeStamp)
+		{
+			if (this.priority == o.priority)
+				return 0;
+			else if (this.priority > o.priority)
+				return 1;
+			else
+				return -1;
+		}
+		else if (this.timeStamp > o.timeStamp)
+		{
+			return 1;
+		}
+		else
+		{
+			return -1;
+		}
 	}
 	
 	public String getEventType()
