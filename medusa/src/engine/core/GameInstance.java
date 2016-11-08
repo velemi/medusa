@@ -5,6 +5,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import engine.gameEvents.EventManager;
 import engine.gameObjects.GameObject;
 import engine.gameObjects.PlayerObject;
 import engine.gameObjects.RenderableObject;
@@ -28,7 +29,7 @@ public abstract class GameInstance extends PApplet
 	/** The port number to be used by the server */
 	public static final int SERVER_PORT = 7734;
 	
-	long GVT;
+	EventManager eventManager = new EventManager();
 	
 	Timeline gameTimeline;
 	

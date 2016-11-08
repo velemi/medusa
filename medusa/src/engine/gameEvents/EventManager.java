@@ -51,8 +51,6 @@ public class EventManager
 		}
 	}
 	
-	
-	
 	public void queueEvent(GameEvent e)
 	{
 		eventQueue.add(e);
@@ -60,7 +58,7 @@ public class EventManager
 		//TODO send a copy of the event to other machines
 	}
 	
-	private void dispatchEvent(GameEvent e)
+	private void dispatchToHandlers(GameEvent e)
 	{
 		List<EventHandler> handlerList = handlerMap.get(e.getEventType());
 		
