@@ -13,7 +13,7 @@ public class GameObject extends Rectangle2D.Float implements Serializable, Clone
 {
 	private static final long serialVersionUID = 3542363890442782476L;
 	
-	private UUID objectID = UUID.randomUUID();
+	protected UUID objectID = UUID.randomUUID();
 	
 	/**
 	 * True if this GameObject should have physical collision with

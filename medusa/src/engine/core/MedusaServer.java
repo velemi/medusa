@@ -306,6 +306,7 @@ public class MedusaServer extends GameInstance
 			System.out.println("Accepted new client");
 			
 			try {
+				networkOutput.writeLong(gameTimeline.getTime());
 				
 				playerObject = createNewPlayer();
 				networkOutput.writeObject(playerObject);
@@ -361,35 +362,32 @@ public class MedusaServer extends GameInstance
 	 */
 	private class ServerLogicThread extends Thread
 	{
-		GameInstance client;
-		public ServerLogicThread(GameInstance client)
+		GameInstance server;
+		public ServerLogicThread(GameInstance server)
 		{
-			this.client = client;
+			this.server = server;
 		}
 		
 		public void run()
 		{
+			long currentTime = gameTimeline.getTime();
 			while(true) {
+				long newTime = gameTimeline.getTime();
 				
-				synchronized (gameObjectMap) {
-					for (Map.Entry<UUID, GameObject> entry : gameObjectMap.entrySet()) {
-						GameObject object = entry.getValue();
-						
-						if ((object instanceof MovingObject)
-								&& !(object instanceof PlayerObject)) {
-							((MovingObject) object).doPhysics(client);
+				while (newTime > currentTime)
+				{
+					currentTime++;
+					
+					synchronized (gameObjectMap) {
+						for (Map.Entry<UUID, MovingObject> entry : movingObjects.entrySet()) {
+							MovingObject object = entry.getValue();
+							
+							if (!(object instanceof PlayerObject)) {
+								object.doPhysics(server);
+							}
 						}
 					}
 				}
-				// TODO Get rid of this throttling after implementing proper
-				// timing stuff
-				try {
-					Thread.sleep(16);
-				} catch (InterruptedException e) {
-					e.printStackTrace();
-				}
-				
-//				System.out.println(System.nanoTime());
 			}
 		}
 	}
@@ -399,7 +397,7 @@ public class MedusaServer extends GameInstance
 	{
 		setUpGameObjects();
 		
-		gameTimeline = new Timeline(1000000L / TARGET_FRAMERATE);
+		gameTimeline = new Timeline(1000000000L / TARGET_FRAMERATE);
 		
 		ConnectionListener connectionListener = new ConnectionListener();
 		connectionListener.start();
@@ -414,6 +412,7 @@ public class MedusaServer extends GameInstance
 	
 	public static void main(String[] args)
 	{
+		
 		MedusaServer gameServer = new MedusaServer();
 		
 		gameServer.runServer();

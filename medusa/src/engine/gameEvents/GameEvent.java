@@ -6,8 +6,8 @@ public abstract class GameEvent implements Serializable, Comparable<GameEvent>
 {
 	private static final long serialVersionUID = 2310896639535068630L;
 	
-	long timeStamp;
-	int priority;
+	private long timeStamp;
+	private int priority;
 	
 	public GameEvent(long ts, int p)
 	{
@@ -40,5 +40,15 @@ public abstract class GameEvent implements Serializable, Comparable<GameEvent>
 	public String getEventType()
 	{
 		return this.getClass().getSimpleName();
+	}
+	
+	public long getTimeStamp()
+	{
+		return this.timeStamp;
+	}
+	
+	public int getPriority()
+	{
+		return this.priority;
 	}
 }

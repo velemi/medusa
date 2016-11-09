@@ -11,8 +11,18 @@ import java.util.Map;
 import java.util.Scanner;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import engine.gameEvents.CollisionEvent;
+import engine.gameEvents.DeathEvent;
+import engine.gameEvents.EventHandler;
+import engine.gameEvents.GameEvent;
+import engine.gameEvents.InputEvent;
+import engine.gameEvents.SpawnEvent;
+import engine.gameObjects.DeathZone;
 import engine.gameObjects.GameObject;
+import engine.gameObjects.Killable;
+import engine.gameObjects.MovingObject;
 import engine.gameObjects.PlayerObject;
+import engine.gameObjects.Spawnable;
 import engine.network.DataPattern;
 import engine.network.NetworkHandler;
 import processing.core.PApplet;
@@ -30,6 +40,127 @@ public class MedusaClient extends GameInstance
 	
 	/** This game client's PlayerObject */
 	private PlayerObject playerObject;
+	
+	private class ClientEventHandler implements EventHandler
+	{
+		@Override
+		public void handleEvent(GameEvent e)
+		{
+			switch(e.getEventType())
+			{
+				case "CollisionEvent":
+				{
+					handle((CollisionEvent) e);
+					break;
+				}
+				case "InputEvent":
+				{
+					handle((InputEvent) e);
+					break;
+				}
+				case "DeathEvent":
+				{
+					handle((DeathEvent) e);
+					break;
+				}
+				case "SpawnEvent":
+				{
+					handle((SpawnEvent) e);
+					break;
+				}
+				default:
+					break;
+			}
+		}
+		
+		private void handle(CollisionEvent e)
+		{
+			GameObject[] objects = new GameObject[2];
+			
+			objects[0] = gameObjectMap.get(e.getIDs()[0]);
+			objects[1] = gameObjectMap.get(e.getIDs()[1]);
+			
+			if ((objects[0] instanceof PlayerObject) && (objects[1] instanceof DeathZone))
+			{
+				eventManager.queueEvent(
+						new DeathEvent(e.getTimeStamp() + 1, 3, objects[0].getID()));
+			}
+			else if ((objects[1] instanceof PlayerObject) && (objects[0] instanceof DeathZone))
+			{
+				eventManager.queueEvent(
+						new DeathEvent(e.getTimeStamp() + 1, 3, objects[1].getID()));
+			}
+		}
+		
+		private void handle(InputEvent e)
+		{
+			switch(e.getInput())
+			{
+				case "LEFT PRESSED":
+				{
+					playerObject.setLeftPressed(true);
+					break;
+				}
+				case "RIGHT PRESSED":
+				{
+					playerObject.setRightPressed(true);
+					break;
+				}
+				case "JUMP PRESSED":
+				{
+					playerObject.setJumpPressed(true);
+					break;
+				}
+				case "LEFT RELEASED":
+				{
+					playerObject.setLeftPressed(false);
+					break;
+				}
+				case "RIGHT RELEASED":
+				{
+					playerObject.setRightPressed(false);
+					break;
+				}
+				case "JUMP RELEASED":
+				{
+					playerObject.setJumpPressed(false);
+					break;
+				}
+				default:
+					break;
+			}
+		}
+		
+		private void handle(DeathEvent e)
+		{
+			GameObject object = gameObjectMap.get(e.getObjectID());
+			
+			if (object instanceof Killable)
+			{
+				((Killable) object).kill();
+				removeFromMap(object);
+				
+				if (object instanceof PlayerObject)
+					eventManager.queueEvent(new SpawnEvent(e.getTimeStamp() 
+							+ PlayerObject.DEFAULT_RESPAWN, 4, object));
+			}
+		}
+		
+		private void handle(SpawnEvent e)
+		{
+			GameObject object = e.getObject();
+			
+			if (object instanceof Spawnable)
+			{
+				((Spawnable) object).spawn();
+				
+				if (!gameObjectMap.contains(object))
+				{
+					gameObjectMap.put(object.getID(), object);
+				}
+			}
+		}
+	}
 	
 	private ServerHandler gameServerHandler;
 	
@@ -122,7 +253,10 @@ public class MedusaClient extends GameInstance
 					g.remove(playerObject.getID());
 					
 					gameObjectMap.putAll(g);
-					gameObjectMap.put(playerObject.getID(), playerObject);
+					
+					
+					if (playerObject.isAlive())
+						gameObjectMap.put(playerObject.getID(), playerObject);
 				} catch (ClassNotFoundException e) {
 					System.err.println("ClassNotFoundException occurred when trying to read from the"
 							+ " server - disconnecting & shutting down");
@@ -208,6 +342,8 @@ public class MedusaClient extends GameInstance
 		protected void initDataTransactions()
 		{
 			try {
+				gameTimeline = new Timeline(networkInput.readLong(), 1000000000L / TARGET_FRAMERATE);
+				
 				playerObject = (PlayerObject) networkInput.readObject();
 				gameObjectMap = (ConcurrentHashMap<UUID, GameObject>) networkInput.readObject();
 				gameObjectMap.put(playerObject.getID(), playerObject);
@@ -238,6 +374,7 @@ public class MedusaClient extends GameInstance
 	private class ClientLogicThread extends Thread
 	{
 		GameInstance client;
+		
 		public ClientLogicThread(GameInstance client)
 		{
 			this.client = client;
@@ -245,19 +382,19 @@ public class MedusaClient extends GameInstance
 		
 		public void run()
 		{
-			
+			currentTime = gameTimeline.getTime();
 			while(true) {
-				playerObject.doPhysics(client);
+				long newTime = gameTimeline.getTime();
 				
-//				// Get rid of this throttling after implementing proper
-//				// timing stuff
-//				try {
-//					Thread.sleep(16);
-//				} catch (InterruptedException e) {
-//					e.printStackTrace();
-//				}
-				
-//				System.out.println(System.nanoTime());
+				while (newTime > currentTime)
+				{
+					currentTime++;
+					
+					eventManager.handleEvents(currentTime);
+					
+					if (playerObject.isAlive())
+						playerObject.doPhysics(client);
+				}
 			}
 		}
 	}
@@ -269,15 +406,26 @@ public class MedusaClient extends GameInstance
 	 */
 	public void keyPressed()
 	{
-		if (key == CODED) {
-			if (keyCode == LEFT) {
-				playerObject.setLeftPressed(true);
-			} else if (keyCode == RIGHT) {
-				playerObject.setRightPressed(true);
+		String inputString = "";
+		
+		if (key == CODED)
+		{
+			if (keyCode == LEFT)
+			{
+				inputString = "LEFT PRESSED";
 			}
-		} else if (key == ' ') {
-			playerObject.setJumpPressed(true);
+			else if (keyCode == RIGHT)
+			{
+				inputString = "RIGHT PRESSED";
+			}
 		}
+		else if (key == ' ')
+		{
+			inputString = "JUMP PRESSED";
+		}
+		
+		if (!inputString.equals(""))
+			eventManager.queueEvent(new InputEvent(gameTimeline.getTime(), 1, inputString));
 	}
 	
 	/* Defines behavior to be run once when keys are released. (non-Javadoc)
@@ -285,25 +433,31 @@ public class MedusaClient extends GameInstance
 	 */
 	public void keyReleased()
 	{
+		String inputString = "";
+		
+		
 		if (key == CODED) {
 			if (keyCode == LEFT) {
-				playerObject.setLeftPressed(false);
+				inputString = "LEFT RELEASED";
 			} else if (keyCode == RIGHT) {
-				playerObject.setRightPressed(false);
+				inputString = "RIGHT RELEASED";
 			}
 		} else if (key == ' ') {
-			playerObject.setJumpPressed(false);
+			inputString = "JUMP RELEASED";
 		}
+		
+		if (!inputString.equals(""))
+			eventManager.queueEvent(new InputEvent(gameTimeline.getTime(), 1, inputString));
 	}
 	
 	@Override
 	public void setup()
 	{
+		eventManager.registerHandler(new ClientEventHandler(), new String[]
+				{"CollisionEvent", "InputEvent", "DeathEvent", "SpawnEvent"});
+		
 		// Try to establish a connection to the server by instantiating a server handler
 		gameServerHandler = new ServerHandler(new Socket());
-		
-		// TODO remove this once timeline is being initialized from server
-		gameTimeline = new Timeline(1000000L / TARGET_FRAMERATE);
 		
 		if (gameServerHandler.connected) {
 			

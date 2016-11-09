@@ -5,6 +5,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import engine.core.GameInstance;
+import engine.gameEvents.CollisionEvent;
 import processing.core.PApplet;
 
 /**
@@ -12,18 +13,25 @@ import processing.core.PApplet;
  * 
  * @author Jordan Neal
  */
-public class PlayerObject extends GameObject implements RenderableObject, Cloneable, MovingObject
+public class PlayerObject
+		extends GameObject 
+		implements RenderableObject, Cloneable, MovingObject, Spawnable, Killable
 {
 	private static final long serialVersionUID = 6154481363016678189L;
 	
 	private int[] color = { (int) (Math.random() * 255),
 			(int) (Math.random() * 255), (int) (Math.random() * 255) };
 	
+	UUID parentClientID;
+			
 	SpawnPoint spawn = null;
+	private boolean alive = true;
+	
+	public static final long DEFAULT_RESPAWN = 240;
 	
 	static final float DEFAULT_X = 120;
 	static final float DEFAULT_Y = 100;
-			
+	
 	// == SIZE == //
 	
 	/** Default height, in pixels, of a PlayerObject */
@@ -89,6 +97,7 @@ public class PlayerObject extends GameObject implements RenderableObject, Clonea
 	{
 		PlayerObject cloneObject = (PlayerObject) super.clone();
 		
+		cloneObject.alive = this.alive;
 		cloneObject.leftPressed = this.leftPressed;
 		cloneObject.rightPressed = this.rightPressed;
 		cloneObject.movementSpeed = this.movementSpeed;
@@ -178,71 +187,94 @@ public class PlayerObject extends GameObject implements RenderableObject, Clonea
 	 */
 	private void handlePhysicalCollisions(GameInstance parent)
 	{
-		ArrayList<GameObject> standingOn = parent.getPhysicalCollisions(x, this.bottomBorder() + 1, width, 1);
-		
-		if(!standingOn.isEmpty()){
-			for (int i = 0; i < standingOn.size(); i++) {
+		ArrayList<GameObject> standingOn = parent.getPhysicalCollisions(x, this.bottomBorder()
+				+ 1, width, 1);
+				
+		if (!standingOn.isEmpty())
+		{
+			for (int i = 0; i < standingOn.size(); i++)
+			{
 				GameObject floor = standingOn.get(i);
-				if (floor instanceof HorizontalMovingBlock) {
+				if (floor instanceof HorizontalMovingBlock)
+				{
 					this.hSpeed += ((HorizontalMovingBlock) floor).movementSpeed
 							* ((HorizontalMovingBlock) floor).movementDirection;
-				} 
+				}
 			}
 		}
 		
 		// horizontal collision
-		if (movementDirection > 0) {
-			if (parent.checkForPhysicalCollision(this.rightBorder() + hSpeed, y, 1, height)) {
-				//x = Math.round(x);
-				while(!parent.checkForPhysicalCollision(this.rightBorder() + movementDirection, y, 1, height)) {
-					x += movementDirection;
-				}
-				hSpeed = 0;
-			}
-		} else if (movementDirection < 0) {
-			if (parent.checkForPhysicalCollision(this.leftBorder() + hSpeed - 1, y, 1, height)) {
-				//x = Math.round(x);
-				while(!parent.checkForPhysicalCollision(this.leftBorder() + movementDirection
-						- 1, y, 1, height)) {
+		if (movementDirection > 0)
+		{
+			if (parent.checkForPhysicalCollision(this.rightBorder()
+					+ hSpeed, y, 1, height))
+			{
+				// x = Math.round(x);
+				while(!parent.checkForPhysicalCollision(this.rightBorder()
+						+ movementDirection, y, 1, height))
+				{
 					x += movementDirection;
 				}
 				hSpeed = 0;
 			}
 		}
-		
-		
+		else if (movementDirection < 0)
+		{
+			if (parent.checkForPhysicalCollision(this.leftBorder() + hSpeed
+					- 1, y, 1, height))
+			{
+				// x = Math.round(x);
+				while(!parent.checkForPhysicalCollision(this.leftBorder()
+						+ movementDirection
+						- 1, y, 1, height))
+				{
+					x += movementDirection;
+				}
+				hSpeed = 0;
+			}
+		}
 		
 		int vDirection = (int) Math.signum(vSpeed);
 		// vertical collision
-		if (vDirection > 0) {
-			if (parent.checkForPhysicalCollision(x, this.bottomBorder() + vSpeed, width, 1)) {
-				//y = Math.round(y); 
-				while(!parent.checkForPhysicalCollision(x, this.bottomBorder() + vDirection, width, 1)) {
+		if (vDirection > 0)
+		{
+			if (parent.checkForPhysicalCollision(x, this.bottomBorder()
+					+ vSpeed, width, 1))
+			{
+				// y = Math.round(y);
+				while(!parent.checkForPhysicalCollision(x, this.bottomBorder()
+						+ vDirection, width, 1))
+				{
 					y += vDirection;
 				}
 				vSpeed = 0;
 			}
-		} else if (vDirection < 0) {
-			if (parent.checkForPhysicalCollision(x, this.topBorder() + vSpeed - 1, width, 1)) {
-				//y = Math.round(y);
-				while(!parent.checkForPhysicalCollision(x, this.topBorder() + vDirection - 1, width, 1)) {
+		}
+		else if (vDirection < 0)
+		{
+			if (parent.checkForPhysicalCollision(x, this.topBorder() + vSpeed
+					- 1, width, 1))
+			{
+				// y = Math.round(y);
+				while(!parent.checkForPhysicalCollision(x, this.topBorder()
+						+ vDirection - 1, width, 1))
+				{
 					y += vDirection;
 				}
 				vSpeed = 0;
 			}
 		}
 		
-		
 	}
-
+	
 	private synchronized void handleNonPhysicalCollisions(GameInstance parent)
 	{
 		ConcurrentHashMap<UUID, GameObject> collisions = parent.getTouching(this);
 		
-		for(Map.Entry<UUID, GameObject> entry : collisions.entrySet()) {
-			if(entry.getValue() instanceof EffectOnContact) {
-				((EffectOnContact) entry.getValue()).effectOnContact(this);
-			}
+		for(UUID entry : collisions.keySet()) 
+		{
+			parent.eventManager.queueEvent(
+					new CollisionEvent(parent.getCurrentTime() + 1, 2, this.getID(), entry));
 		}
 	}
 	
@@ -264,11 +296,13 @@ public class PlayerObject extends GameObject implements RenderableObject, Clonea
 			vSpeed += gravity;
 			
 		canJump = false;
-		if (parent.checkForPhysicalCollision(x, y + height + 1, width, 1)) {
+		if (parent.checkForPhysicalCollision(x, y + height + 1, width, 1))
+		{
 			canJump = true;
 		}
 		
-		if (canJump && jumpPressed) {
+		if (canJump && jumpPressed)
+		{
 			vSpeed = -1 * jumpSpeed;
 		}
 		
@@ -293,13 +327,34 @@ public class PlayerObject extends GameObject implements RenderableObject, Clonea
 	{
 		return new PlayerObject(DEFAULT_X, DEFAULT_Y);
 	}
-
+	
 	public synchronized void kill()
 	{
-		if (spawn != null) {
+		alive = false;
+	}
+	
+	public void revive()
+	{
+		alive = true;
+	}
+	
+	public boolean isAlive()
+	{
+		return this.alive;
+	}
+
+	@Override
+	public void spawn()
+	{
+		alive = true;
+		
+		if (spawn != null)
+		{
 			x = spawn.x;
 			y = spawn.y;
-		} else {
+		}
+		else
+		{
 			x = 0;
 			y = 0;
 		}
@@ -310,7 +365,5 @@ public class PlayerObject extends GameObject implements RenderableObject, Clonea
 		movementDirection = 0;
 		
 		canJump = false;
-		
-		
 	}
 }

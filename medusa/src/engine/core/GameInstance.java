@@ -7,6 +7,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import engine.gameEvents.EventManager;
 import engine.gameObjects.GameObject;
+import engine.gameObjects.MovingObject;
 import engine.gameObjects.PlayerObject;
 import engine.gameObjects.RenderableObject;
 import engine.gameObjects.SpawnPoint;
@@ -29,21 +30,44 @@ public abstract class GameInstance extends PApplet
 	/** The port number to be used by the server */
 	public static final int SERVER_PORT = 7734;
 	
-	EventManager eventManager = new EventManager();
+	public EventManager eventManager = new EventManager();
 	
+	long currentTime;
+		
 	Timeline gameTimeline;
 	
 	ConcurrentHashMap<UUID, GameObject> gameObjectMap = new ConcurrentHashMap<UUID, GameObject>();
+	
+	ConcurrentHashMap<UUID, MovingObject> movingObjects = new ConcurrentHashMap<UUID, MovingObject>();
 	
 	ConcurrentLinkedQueue<SpawnPoint> spawnPoints = new ConcurrentLinkedQueue<SpawnPoint>();
 	
 	public void addToMap(GameObject object)
 	{
 		if(object != null)
+		{
 			gameObjectMap.put(object.getID(), object);
-		
-		if(object instanceof SpawnPoint)
-			spawnPoints.add((SpawnPoint) object);
+			
+			if(object instanceof SpawnPoint)
+				spawnPoints.add((SpawnPoint) object);
+			
+			if(object instanceof MovingObject)
+				movingObjects.put(object.getID(), (MovingObject) object);
+		}
+	}
+	
+	public void removeFromMap(GameObject object)
+	{
+		if(object != null)
+		{
+			gameObjectMap.remove(object.getID());
+			
+			if(object instanceof SpawnPoint)
+				spawnPoints.remove((SpawnPoint) object);
+			
+			if(object instanceof MovingObject)
+				movingObjects.remove(object.getID());
+		}
 	}
 	
 	public PlayerObject createNewPlayer()
@@ -155,5 +179,10 @@ public abstract class GameInstance extends PApplet
 				((RenderableObject) object).display(this);
 			}
 		}
+	}
+	
+	public long getCurrentTime()
+	{
+		return currentTime;
 	}
 }

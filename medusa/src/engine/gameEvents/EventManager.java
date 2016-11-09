@@ -22,11 +22,12 @@ public class EventManager
 	{
 		for (String eventType : eventTypes)
 		{
-			List<EventHandler> handlerList = 
-					handlerMap.putIfAbsent(eventType, 
+			handlerMap.putIfAbsent(eventType, 
 							Collections.synchronizedList(new ArrayList<EventHandler>()));
 			
-			if (!handlerList.contains(handler))
+			List<EventHandler> handlerList = handlerMap.get(eventType);
+			
+			if (handlerList != null && !handlerList.contains(handler))
 			{
 				handlerList.add(handler);
 			}
@@ -53,6 +54,8 @@ public class EventManager
 	
 	public void queueEvent(GameEvent e)
 	{
+		//TODO make sure only one copy of the "same" event is queued for the same timestamp
+		
 		eventQueue.add(e);
 		
 		//TODO send a copy of the event to other machines
@@ -71,8 +74,12 @@ public class EventManager
 		}
 	}
 	
-	public void handleEvents(long ts)
+	public void handleEvents(long currentTime)
 	{
-		//TODO
+		//TODO rewrite once events are handled across all machines?
+		while(eventQueue.peek() != null && (eventQueue.peek().getTimeStamp() <= currentTime))
+		{
+			dispatchToHandlers(eventQueue.poll());
+		}
 	}
 }

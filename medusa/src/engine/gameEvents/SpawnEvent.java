@@ -1,17 +1,22 @@
 package engine.gameEvents;
 
-import java.util.UUID;
+import engine.gameObjects.GameObject;
 
 public class SpawnEvent extends GameEvent
 {
 	private static final long serialVersionUID = -2382267984785947092L;
 	
-	UUID objectID;
+	GameObject object;
 	
-	public SpawnEvent(long ts, int p, UUID id)
+	public SpawnEvent(long ts, int p, GameObject object)
 	{
 		super(ts, p);
 		
-		this.objectID = id;
+		this.object = object;
+	}
+	
+	public GameObject getObject()
+	{
+		return object;
 	}
 }
