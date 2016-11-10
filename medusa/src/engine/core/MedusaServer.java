@@ -13,6 +13,7 @@ import engine.gameEvents.DeathEvent;
 import engine.gameEvents.EventHandler;
 import engine.gameEvents.GameEvent;
 import engine.gameEvents.InputEvent;
+import engine.gameEvents.NullEvent;
 import engine.gameEvents.SpawnEvent;
 import engine.gameObjects.Block;
 import engine.gameObjects.DeathZone;
@@ -81,7 +82,7 @@ public class MedusaServer extends GameInstance
 					&& (objects[1] instanceof DeathZone))
 			{
 				eventManager.queueEvent(new DeathEvent(e, e.getTimeStamp()
-						+ 1, 3, getInstanceID(), objects[0].getID()));
+						+ 1, getInstanceID(), objects[0].getID()));
 			}
 			else if ((objects[1] instanceof PlayerObject)
 					&& (objects[0] instanceof DeathZone))
@@ -229,6 +230,8 @@ public class MedusaServer extends GameInstance
 							}
 						}
 					}
+					
+					queueEvent(new NullEvent(currentTime, instanceID), true);
 				}
 			}
 		}
@@ -351,7 +354,7 @@ public class MedusaServer extends GameInstance
 			@Override
 			protected void respondToMessage()
 			{
-				switch(incomingMessage.getMessageType())
+				switch (incomingMessage.getMessageType())
 				{
 					case "GameEventMessage":
 					{
@@ -369,7 +372,7 @@ public class MedusaServer extends GameInstance
 						
 						removeFromMap(playerObjects.get(disconnectedClient));
 						
-						for(ClientHandler client : clientList)
+						for (ClientHandler client : clientList)
 						{
 							if (client.clientInstanceID.equals(disconnectedClient))
 							{
@@ -433,6 +436,8 @@ public class MedusaServer extends GameInstance
 			try
 			{
 				networkOutput.writeLong(gameTimeline.getTime());
+				
+				// TODO send new client all events currently queued on server
 				
 				clientInstanceID = UUID.randomUUID();
 				
@@ -506,7 +511,7 @@ public class MedusaServer extends GameInstance
 		
 		eventManager.registerHandler(new ServerEventHandler(), new String[ ] {
 				"CollisionEvent", "InputEvent", "DeathEvent", "SpawnEvent" });
-		
+				
 		gameTimeline = new Timeline(1000000000L / TARGET_FRAMERATE);
 		
 		ConnectionListener connectionListener = new ConnectionListener();

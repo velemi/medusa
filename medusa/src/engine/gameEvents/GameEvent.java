@@ -26,7 +26,7 @@ public abstract class GameEvent implements Serializable, Comparable<GameEvent>
 		this.priority = p;
 		this.instanceID = instanceID;
 		
-		if(this.parentEvent == null)
+		if (this.parentEvent == null)
 		{
 			this.age = 0;
 		}
@@ -39,7 +39,7 @@ public abstract class GameEvent implements Serializable, Comparable<GameEvent>
 	@Override
 	public int compareTo(GameEvent o)
 	{
-		if(this.timeStamp == o.timeStamp)
+		if (this.timeStamp == o.timeStamp)
 		{
 			if (this.priority == o.priority)
 				return 0;

@@ -28,8 +28,7 @@ public class EventManager
 	{
 		for (String eventType : eventTypes)
 		{
-			handlerMap.putIfAbsent(eventType, 
-							Collections.synchronizedList(new ArrayList<EventHandler>()));
+			handlerMap.putIfAbsent(eventType, Collections.synchronizedList(new ArrayList<EventHandler>()));
 			
 			List<EventHandler> handlerList = handlerMap.get(eventType);
 			
@@ -60,14 +59,16 @@ public class EventManager
 	
 	public void queueEvent(GameEvent e)
 	{
-//		instanceQueues.putIfAbsent(e.getInstanceID(),
-//							new PriorityBlockingQueue<GameEvent>());
-//		
-//		PriorityBlockingQueue<GameEvent> instanceQueue = instanceQueues.get(e.getInstanceID());
-//		
-//		instanceQueue.add(e);
+		// instanceQueues.putIfAbsent(e.getInstanceID(),
+		// new PriorityBlockingQueue<GameEvent>());
+		//
+		// PriorityBlockingQueue<GameEvent> instanceQueue =
+		// instanceQueues.get(e.getInstanceID());
+		//
+		// instanceQueue.add(e);
 		
-		//TODO make sure only one copy of the "same" event is queued for the same timestamp, at least for InputEvents
+		// TODO make sure only one copy of the "same" event is queued for the
+		// same timestamp, at least for InputEvents
 		
 		eventQueue.add(e);
 	}
@@ -76,7 +77,7 @@ public class EventManager
 	{
 		List<EventHandler> handlerList = handlerMap.get(e.getEventType());
 		
-		synchronized(handlerList)
+		synchronized (handlerList)
 		{
 			for (EventHandler h : handlerList)
 			{
@@ -90,7 +91,7 @@ public class EventManager
 	{
 		long newGVT = Long.MAX_VALUE;
 		
-		for(PriorityBlockingQueue<GameEvent> instQueue : instanceQueues.values())
+		for (PriorityBlockingQueue<GameEvent> instQueue : instanceQueues.values())
 		{
 			long ts = instQueue.peek().getTimeStamp();
 			if (ts < newGVT)
@@ -105,9 +106,9 @@ public class EventManager
 	public void handleEvents(long currentTime)
 	{
 		
-		
-		//TODO rewrite once events are handled across all machines?
-		while(eventQueue.peek() != null && (eventQueue.peek().getTimeStamp() <= currentTime))
+		// TODO rewrite once events are handled across all machines?
+		while(eventQueue.peek() != null
+				&& (eventQueue.peek().getTimeStamp() <= currentTime))
 		{
 			dispatchToHandlers(eventQueue.poll());
 		}

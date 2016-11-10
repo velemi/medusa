@@ -1,7 +1,6 @@
 package engine.gameObjects;
 
 import java.util.ArrayList;
-import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import engine.core.GameInstance;
@@ -21,9 +20,9 @@ public class PlayerObject
 	
 	private int[] color = { (int) (Math.random() * 255),
 			(int) (Math.random() * 255), (int) (Math.random() * 255) };
-	
-	UUID parentInstanceID;
 			
+	UUID parentInstanceID;
+	
 	SpawnPoint spawn = null;
 	private boolean alive = true;
 	
@@ -281,19 +280,16 @@ public class PlayerObject
 	{
 		ConcurrentHashMap<UUID, GameObject> collisions = parent.getTouching(this);
 		
-		for(UUID entry : collisions.keySet()) 
+		for (UUID entry : collisions.keySet())
 		{
-			parent.queueEvent(new CollisionEvent(parent.getCurrentTime() + 1, 2, parentInstanceID, 
-							this.getID(), entry), false);
+			parent.queueEvent(new CollisionEvent(parent.getCurrentTime()
+					+ 1, parentInstanceID, this.getID(), entry), false);
 		}
 	}
 	
 	/** Updates this PlayerObject's position based on its current state. */
 	public synchronized void doPhysics(GameInstance parent)
 	{
-		float sX = x;
-		float sY = y;
-		
 		movementDirection = 0;
 		if (leftPressed)
 			movementDirection -= 1;
@@ -323,13 +319,6 @@ public class PlayerObject
 		x += hSpeed;
 		y += vSpeed;
 		
-		// If player object did move
-		if (sX != x || sY != y)
-		{
-			// Trigger sending PLAYER_OBJECT_UPDATE
-			// TODO ...
-		}
-		
 		handleNonPhysicalCollisions(parent);
 	}
 	
@@ -352,7 +341,7 @@ public class PlayerObject
 	{
 		return this.alive;
 	}
-
+	
 	@Override
 	public void spawn()
 	{

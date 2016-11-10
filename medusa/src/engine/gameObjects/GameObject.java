@@ -9,7 +9,8 @@ import java.util.UUID;
  * 
  * @author Jordan Neal
  */
-public class GameObject extends Rectangle2D.Float implements Serializable, Cloneable
+public class GameObject
+		extends Rectangle2D.Float implements Serializable, Cloneable
 {
 	private static final long serialVersionUID = 3542363890442782476L;
 	
@@ -52,7 +53,7 @@ public class GameObject extends Rectangle2D.Float implements Serializable, Clone
 		cloneObject.physicalCollision = this.physicalCollision;
 		cloneObject.objectID = this.objectID;
 		
-		return(cloneObject);
+		return (cloneObject);
 	}
 	
 	public synchronized UUID getID()
@@ -62,22 +63,22 @@ public class GameObject extends Rectangle2D.Float implements Serializable, Clone
 	
 	public synchronized float topBorder()
 	{
-		return(this.y);
+		return (this.y);
 	}
 	
 	public synchronized float bottomBorder()
 	{
-		return(this.y + this.height);
+		return (this.y + this.height);
 	}
 	
 	public synchronized float leftBorder()
 	{
-		return(this.x);
+		return (this.x);
 	}
 	
 	public synchronized float rightBorder()
 	{
-		return(this.x + this.width);
+		return (this.x + this.width);
 	}
 	
 	/**

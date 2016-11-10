@@ -37,8 +37,7 @@ public class Block extends GameObject implements RenderableObject
 	}
 	
 	/*
-	 * Defines rendering behavior for Block objects
-	 * (non-Javadoc)
+	 * Defines rendering behavior for Block objects (non-Javadoc)
 	 * @see engine.GameObject#display()
 	 */
 	public synchronized void display(PApplet parent)

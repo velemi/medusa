@@ -247,7 +247,7 @@ public class MedusaClient extends GameInstance
 			@Override
 			protected void respondToMessage()
 			{
-				switch(incomingMessage.getMessageType())
+				switch (incomingMessage.getMessageType())
 				{
 					case "GameEventMessage":
 					{
@@ -340,8 +340,7 @@ public class MedusaClient extends GameInstance
 				instanceID = playerObject.getParentInstanceID();
 				
 				@SuppressWarnings("unchecked")
-				ConcurrentHashMap<UUID, GameObject> g = 
-						(ConcurrentHashMap<UUID, GameObject>) networkInput.readObject();
+				ConcurrentHashMap<UUID, GameObject> g = (ConcurrentHashMap<UUID, GameObject>) networkInput.readObject();
 				
 				for (GameObject o : g.values())
 				{

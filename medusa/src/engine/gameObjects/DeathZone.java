@@ -2,7 +2,8 @@ package engine.gameObjects;
 
 import processing.core.PApplet;
 
-public class DeathZone extends GameObject implements EffectOnContact, RenderableObject
+public class DeathZone
+		extends GameObject implements EffectOnContact, RenderableObject
 {
 	private static final long serialVersionUID = 4872896885224403682L;
 	
@@ -11,7 +12,7 @@ public class DeathZone extends GameObject implements EffectOnContact, Renderable
 	
 	/** Default width, in pixels, of a DeathZone object */
 	static final float DEFAULT_WIDTH = 100;
-
+	
 	private static final boolean DEBUG = false;
 	
 	public DeathZone(int sX, int sY)
@@ -22,19 +23,21 @@ public class DeathZone extends GameObject implements EffectOnContact, Renderable
 		
 		this.setPhysicalCollision(false);
 	}
-
+	
 	@Override
 	public void effectOnContact(GameObject inContact)
 	{
-		if (inContact instanceof PlayerObject) {
+		if (inContact instanceof PlayerObject)
+		{
 			((PlayerObject) inContact).kill();
 		}
 	}
-
+	
 	@Override
 	public void display(PApplet parent)
 	{
-		if (DeathZone.DEBUG) {
+		if (DeathZone.DEBUG)
+		{
 			parent.fill(200, 0, 0);
 			parent.stroke(200, 0, 0);
 			parent.rect(this.x, this.y, this.width, this.height);

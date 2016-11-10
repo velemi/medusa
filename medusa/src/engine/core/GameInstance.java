@@ -38,7 +38,7 @@ public abstract class GameInstance extends PApplet
 	public abstract void queueEvent(GameEvent e, boolean propagate);
 	
 	long currentTime;
-		
+	
 	Timeline gameTimeline;
 	
 	ConcurrentHashMap<UUID, GameObject> gameObjectMap = new ConcurrentHashMap<UUID, GameObject>();
@@ -53,34 +53,34 @@ public abstract class GameInstance extends PApplet
 	
 	public void addToMap(GameObject object)
 	{
-		if(object != null)
+		if (object != null)
 		{
 			gameObjectMap.put(object.getID(), object);
 			
-			if(object instanceof SpawnPoint)
+			if (object instanceof SpawnPoint)
 				spawnPoints.add((SpawnPoint) object);
-			
-			if(object instanceof MovingObject)
+				
+			if (object instanceof MovingObject)
 				movingObjects.put(object.getID(), (MovingObject) object);
-			
-			if(object instanceof PlayerObject)
+				
+			if (object instanceof PlayerObject)
 				playerObjects.put(((PlayerObject) object).getParentInstanceID(), (PlayerObject) object);
 		}
 	}
 	
 	public void removeFromMap(GameObject object)
 	{
-		if(object != null)
+		if (object != null)
 		{
 			gameObjectMap.remove(object.getID());
 			
-			if(object instanceof SpawnPoint)
+			if (object instanceof SpawnPoint)
 				spawnPoints.remove((SpawnPoint) object);
-			
-			if(object instanceof MovingObject)
+				
+			if (object instanceof MovingObject)
 				movingObjects.remove(object.getID());
-			
-			if(object instanceof PlayerObject)
+				
+			if (object instanceof PlayerObject)
 				playerObjects.remove(((PlayerObject) object).getParentInstanceID());
 		}
 	}
@@ -90,7 +90,7 @@ public abstract class GameInstance extends PApplet
 		SpawnPoint spawn = spawnPoints.poll();
 		PlayerObject newPlayer = null;
 		
-		if (spawn != null) 
+		if (spawn != null)
 		{
 			newPlayer = new PlayerObject(spawn);
 			spawnPoints.add(spawn);
@@ -107,8 +107,10 @@ public abstract class GameInstance extends PApplet
 	{
 		ConcurrentHashMap<UUID, GameObject> result = new ConcurrentHashMap<UUID, GameObject>();
 		
-		for(Map.Entry<UUID, GameObject> entry : gameObjectMap.entrySet()) {
-			if (entry.getValue().intersects(theObject)) {
+		for (Map.Entry<UUID, GameObject> entry : gameObjectMap.entrySet())
+		{
+			if (entry.getValue().intersects(theObject))
+			{
 				result.put(entry.getKey(), entry.getValue().clone());
 			}
 		}
@@ -116,12 +118,16 @@ public abstract class GameInstance extends PApplet
 		return result;
 	}
 	
-	public ConcurrentHashMap<UUID, GameObject> getPhysicalCollisions(double x, double y)
+	public ConcurrentHashMap<UUID, GameObject> getPhysicalCollisions(double x,
+			double y)
 	{
 		ConcurrentHashMap<UUID, GameObject> result = new ConcurrentHashMap<UUID, GameObject>();
 		
-		for (Map.Entry<UUID, GameObject> entry : gameObjectMap.entrySet()) {
-			if (entry.getValue().contains(x, y) && entry.getValue().hasPhysicalCollision()) {
+		for (Map.Entry<UUID, GameObject> entry : gameObjectMap.entrySet())
+		{
+			if (entry.getValue().contains(x, y)
+					&& entry.getValue().hasPhysicalCollision())
+			{
 				result.put(entry.getKey(), entry.getValue());
 			}
 		}
@@ -129,12 +135,16 @@ public abstract class GameInstance extends PApplet
 		return result;
 	}
 	
-	public ArrayList<GameObject> getPhysicalCollisions(double x, double y, double w, double h)
+	public ArrayList<GameObject> getPhysicalCollisions(double x, double y,
+			double w, double h)
 	{
 		ArrayList<GameObject> result = new ArrayList<GameObject>();
 		
-		for (Map.Entry<UUID, GameObject> entry : gameObjectMap.entrySet()) {
-			if (entry.getValue().intersects(x, y, w, h) && entry.getValue().hasPhysicalCollision()) {
+		for (Map.Entry<UUID, GameObject> entry : gameObjectMap.entrySet())
+		{
+			if (entry.getValue().intersects(x, y, w, h)
+					&& entry.getValue().hasPhysicalCollision())
+			{
 				result.add(entry.getValue());
 			}
 		}
@@ -146,8 +156,11 @@ public abstract class GameInstance extends PApplet
 	{
 		boolean result = false;
 		
-		for (Map.Entry<UUID, GameObject> entry : gameObjectMap.entrySet()) {
-			if (entry.getValue().contains(x, y) && entry.getValue().hasPhysicalCollision()) {
+		for (Map.Entry<UUID, GameObject> entry : gameObjectMap.entrySet())
+		{
+			if (entry.getValue().contains(x, y)
+					&& entry.getValue().hasPhysicalCollision())
+			{
 				result = true;
 			}
 		}
@@ -155,12 +168,16 @@ public abstract class GameInstance extends PApplet
 		return result;
 	}
 	
-	public boolean checkForPhysicalCollision(double x, double y, double w, double h)
+	public boolean checkForPhysicalCollision(double x, double y, double w,
+			double h)
 	{
 		boolean result = false;
 		
-		for (Map.Entry<UUID, GameObject> entry : gameObjectMap.entrySet()) {
-			if (entry.getValue().intersects(x, y, w, h) && entry.getValue().hasPhysicalCollision()) {
+		for (Map.Entry<UUID, GameObject> entry : gameObjectMap.entrySet())
+		{
+			if (entry.getValue().intersects(x, y, w, h)
+					&& entry.getValue().hasPhysicalCollision())
+			{
 				result = true;
 			}
 		}
@@ -187,10 +204,12 @@ public abstract class GameInstance extends PApplet
 		// render the frame & gameObjects
 		background(204);
 		
-		for (Map.Entry<UUID, GameObject> entry : gameObjectMap.entrySet()) {
+		for (Map.Entry<UUID, GameObject> entry : gameObjectMap.entrySet())
+		{
 			GameObject object = entry.getValue();
 			
-			if(object instanceof RenderableObject) {
+			if (object instanceof RenderableObject)
+			{
 				((RenderableObject) object).display(this);
 			}
 		}
