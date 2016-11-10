@@ -274,7 +274,7 @@ public class PlayerObject
 		for(UUID entry : collisions.keySet()) 
 		{
 			parent.eventManager.queueEvent(
-					new CollisionEvent(parent.getCurrentTime() + 1, 2, this.getID(), entry));
+					new CollisionEvent(parent.getCurrentTime() + 1, 2, parentClientID, this.getID(), entry));
 		}
 	}
 	

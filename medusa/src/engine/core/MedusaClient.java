@@ -36,8 +36,6 @@ public class MedusaClient extends GameInstance
 {
 	public static final boolean 	DEBUG = GameInstance.DEBUG;
 	
-	UUID clientID = UUID.randomUUID();
-	
 	/** This game client's PlayerObject */
 	private PlayerObject playerObject;
 	
@@ -83,12 +81,12 @@ public class MedusaClient extends GameInstance
 			if ((objects[0] instanceof PlayerObject) && (objects[1] instanceof DeathZone))
 			{
 				eventManager.queueEvent(
-						new DeathEvent(e.getTimeStamp() + 1, 3, objects[0].getID()));
+						new DeathEvent(e, e.getTimeStamp() + 1, 3, getInstanceID(), objects[0].getID()));
 			}
 			else if ((objects[1] instanceof PlayerObject) && (objects[0] instanceof DeathZone))
 			{
 				eventManager.queueEvent(
-						new DeathEvent(e.getTimeStamp() + 1, 3, objects[1].getID()));
+						new DeathEvent(e, e.getTimeStamp() + 1, 3, getInstanceID(), objects[1].getID()));
 			}
 		}
 		
@@ -141,8 +139,8 @@ public class MedusaClient extends GameInstance
 				removeFromMap(object);
 				
 				if (object instanceof PlayerObject)
-					eventManager.queueEvent(new SpawnEvent(e.getTimeStamp() 
-							+ PlayerObject.DEFAULT_RESPAWN, 4, object));
+					eventManager.queueEvent(new SpawnEvent(e, e.getTimeStamp() 
+							+ PlayerObject.DEFAULT_RESPAWN, 4, getInstanceID(), object));
 			}
 		}
 		
@@ -425,7 +423,7 @@ public class MedusaClient extends GameInstance
 		}
 		
 		if (!inputString.equals(""))
-			eventManager.queueEvent(new InputEvent(gameTimeline.getTime(), 1, inputString));
+			eventManager.queueEvent(new InputEvent(gameTimeline.getTime(), 1, getInstanceID(), inputString));
 	}
 	
 	/* Defines behavior to be run once when keys are released. (non-Javadoc)
@@ -447,7 +445,7 @@ public class MedusaClient extends GameInstance
 		}
 		
 		if (!inputString.equals(""))
-			eventManager.queueEvent(new InputEvent(gameTimeline.getTime(), 1, inputString));
+			eventManager.queueEvent(new InputEvent(gameTimeline.getTime(), 1, getInstanceID(), inputString));
 	}
 	
 	@Override

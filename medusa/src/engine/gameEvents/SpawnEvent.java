@@ -1,5 +1,6 @@
 package engine.gameEvents;
 
+import java.util.UUID;
 import engine.gameObjects.GameObject;
 
 public class SpawnEvent extends GameEvent
@@ -8,9 +9,16 @@ public class SpawnEvent extends GameEvent
 	
 	GameObject object;
 	
-	public SpawnEvent(long ts, int p, GameObject object)
+	public SpawnEvent(long ts, int p, UUID instanceID, GameObject object)
 	{
-		super(ts, p);
+		super(ts, p, instanceID);
+		
+		this.object = object;
+	}
+	
+	public SpawnEvent(GameEvent parent, long ts, int p, UUID instanceID, GameObject object)
+	{
+		super(parent, ts, p, instanceID);
 		
 		this.object = object;
 	}

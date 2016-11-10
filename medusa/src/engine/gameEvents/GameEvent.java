@@ -1,18 +1,39 @@
 package engine.gameEvents;
 
 import java.io.Serializable;
+import java.util.UUID;
 
 public abstract class GameEvent implements Serializable, Comparable<GameEvent>
 {
 	private static final long serialVersionUID = 2310896639535068630L;
 	
+	private GameEvent parentEvent;
 	private long timeStamp;
 	private int priority;
+	private UUID instanceID;
 	
-	public GameEvent(long ts, int p)
+	private int age;
+	
+	public GameEvent(long ts, int p, UUID instanceID)
 	{
+		this(null, ts, p, instanceID);
+	}
+	
+	public GameEvent(GameEvent parent, long ts, int p, UUID instanceID)
+	{
+		this.parentEvent = parent;
 		this.timeStamp = ts;
 		this.priority = p;
+		this.instanceID = instanceID;
+		
+		if(this.parentEvent == null)
+		{
+			this.age = 0;
+		}
+		else
+		{
+			this.age = this.parentEvent.age;
+		}
 	}
 	
 	@Override
@@ -42,6 +63,11 @@ public abstract class GameEvent implements Serializable, Comparable<GameEvent>
 		return this.getClass().getSimpleName();
 	}
 	
+	public GameEvent getParentEvent()
+	{
+		return this.parentEvent;
+	}
+	
 	public long getTimeStamp()
 	{
 		return this.timeStamp;
@@ -50,5 +76,15 @@ public abstract class GameEvent implements Serializable, Comparable<GameEvent>
 	public int getPriority()
 	{
 		return this.priority;
+	}
+	
+	public UUID getSourceID()
+	{
+		return this.instanceID;
+	}
+	
+	public int getAge()
+	{
+		return this.age;
 	}
 }

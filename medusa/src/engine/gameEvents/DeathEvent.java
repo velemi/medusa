@@ -8,11 +8,18 @@ public class DeathEvent extends GameEvent
 	
 	private UUID objectID;
 	
-	public DeathEvent(long ts, int p, UUID id)
+	public DeathEvent(long ts, int p, UUID instanceID, UUID objectID)
 	{
-		super(ts, p);
+		super(ts, p, instanceID);
 		
-		this.objectID = id;
+		this.objectID = objectID;
+	}
+	
+	public DeathEvent(GameEvent parent, long ts, int p, UUID instanceID, UUID objectID)
+	{
+		super(parent, ts, p, instanceID);
+		
+		this.objectID = objectID;
 	}
 	
 	public UUID getObjectID()

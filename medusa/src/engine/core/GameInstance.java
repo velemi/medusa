@@ -23,6 +23,8 @@ public abstract class GameInstance extends PApplet
 {
 	public static final boolean DEBUG = true;
 	
+	private UUID instanceID = UUID.randomUUID();
+	
 	public static final int TARGET_FRAMERATE = 60;
 	
 	public static final int SCREEN_WIDTH = 800, SCREEN_HEIGHT = 800;
@@ -41,6 +43,11 @@ public abstract class GameInstance extends PApplet
 	ConcurrentHashMap<UUID, MovingObject> movingObjects = new ConcurrentHashMap<UUID, MovingObject>();
 	
 	ConcurrentLinkedQueue<SpawnPoint> spawnPoints = new ConcurrentLinkedQueue<SpawnPoint>();
+	
+	public UUID getInstanceID()
+	{
+		return this.instanceID;
+	}
 	
 	public void addToMap(GameObject object)
 	{
