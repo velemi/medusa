@@ -22,12 +22,12 @@ public class PlayerObject
 	private int[] color = { (int) (Math.random() * 255),
 			(int) (Math.random() * 255), (int) (Math.random() * 255) };
 	
-	UUID parentClientID;
+	UUID parentInstanceID;
 			
 	SpawnPoint spawn = null;
 	private boolean alive = true;
 	
-	public static final long DEFAULT_RESPAWN = 240;
+	public static final long DEFAULT_RESPAWN = 90;
 	
 	static final float DEFAULT_X = 120;
 	static final float DEFAULT_Y = 100;
@@ -142,6 +142,16 @@ public class PlayerObject
 		this(s.x, s.y);
 		
 		spawn = s;
+	}
+	
+	public UUID getParentInstanceID()
+	{
+		return this.parentInstanceID;
+	}
+	
+	public void setParentInstanceID(UUID id)
+	{
+		this.parentInstanceID = id;
 	}
 	
 	public synchronized void becomeCopyOf(PlayerObject other)
@@ -273,8 +283,8 @@ public class PlayerObject
 		
 		for(UUID entry : collisions.keySet()) 
 		{
-			parent.eventManager.queueEvent(
-					new CollisionEvent(parent.getCurrentTime() + 1, 2, parentClientID, this.getID(), entry));
+			parent.queueEvent(new CollisionEvent(parent.getCurrentTime() + 1, 2, parentInstanceID, 
+							this.getID(), entry), false);
 		}
 	}
 	

@@ -1,6 +1,5 @@
 package engine.core;
 
-import java.io.EOFException;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -8,18 +7,26 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
 import java.util.ArrayList;
-import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
+import engine.gameEvents.CollisionEvent;
+import engine.gameEvents.DeathEvent;
+import engine.gameEvents.EventHandler;
+import engine.gameEvents.GameEvent;
+import engine.gameEvents.InputEvent;
+import engine.gameEvents.SpawnEvent;
 import engine.gameObjects.Block;
 import engine.gameObjects.DeathZone;
 import engine.gameObjects.GameObject;
 import engine.gameObjects.HorizontalMovingBlock;
+import engine.gameObjects.Killable;
 import engine.gameObjects.MovingObject;
 import engine.gameObjects.PlayerObject;
 import engine.gameObjects.SpawnPoint;
-import engine.network.DataPattern;
+import engine.gameObjects.Spawnable;
+import engine.network.ClientDisconnectMessage;
+import engine.network.GameEventMessage;
 import engine.network.NetworkHandler;
+import engine.network.NewClientMessage;
 import processing.core.PApplet;
 
 /**
@@ -31,6 +38,202 @@ public class MedusaServer extends GameInstance
 {
 	public static final boolean DEBUG = GameInstance.DEBUG;
 	
+	private class ServerEventHandler implements EventHandler
+	{
+		@Override
+		public void handleEvent(GameEvent e)
+		{
+			switch (e.getEventType())
+			{
+				case "CollisionEvent":
+				{
+					handle((CollisionEvent) e);
+					break;
+				}
+				case "InputEvent":
+				{
+					handle((InputEvent) e);
+					break;
+				}
+				case "DeathEvent":
+				{
+					handle((DeathEvent) e);
+					break;
+				}
+				case "SpawnEvent":
+				{
+					handle((SpawnEvent) e);
+					break;
+				}
+				default:
+					break;
+			}
+		}
+		
+		private void handle(CollisionEvent e)
+		{
+			GameObject[] objects = new GameObject[2];
+			
+			objects[0] = gameObjectMap.get(e.getIDs()[0]);
+			objects[1] = gameObjectMap.get(e.getIDs()[1]);
+			
+			if ((objects[0] instanceof PlayerObject)
+					&& (objects[1] instanceof DeathZone))
+			{
+				eventManager.queueEvent(new DeathEvent(e, e.getTimeStamp()
+						+ 1, 3, getInstanceID(), objects[0].getID()));
+			}
+			else if ((objects[1] instanceof PlayerObject)
+					&& (objects[0] instanceof DeathZone))
+			{
+				eventManager.queueEvent(new DeathEvent(e, e.getTimeStamp()
+						+ 1, 3, getInstanceID(), objects[1].getID()));
+			}
+		}
+		
+		private void handle(InputEvent e)
+		{
+			PlayerObject p = playerObjects.get(e.getInstanceID());
+			
+			if (p != null)
+			{
+				switch (e.getInput())
+				{
+					case "LEFT PRESSED":
+					{
+						p.setLeftPressed(true);
+						break;
+					}
+					case "RIGHT PRESSED":
+					{
+						p.setRightPressed(true);
+						break;
+					}
+					case "JUMP PRESSED":
+					{
+						p.setJumpPressed(true);
+						break;
+					}
+					case "LEFT RELEASED":
+					{
+						p.setLeftPressed(false);
+						break;
+					}
+					case "RIGHT RELEASED":
+					{
+						p.setRightPressed(false);
+						break;
+					}
+					case "JUMP RELEASED":
+					{
+						p.setJumpPressed(false);
+						break;
+					}
+					default:
+						break;
+				}
+			}
+		}
+		
+		private void handle(DeathEvent e)
+		{
+			GameObject object = gameObjectMap.get(e.getObjectID());
+			
+			if (object instanceof Killable)
+			{
+				((Killable) object).kill();
+				removeFromMap(object);
+				
+				if (object instanceof PlayerObject)
+					eventManager.queueEvent(new SpawnEvent(e, e.getTimeStamp()
+							+ PlayerObject.DEFAULT_RESPAWN, 4, getInstanceID(), object));
+			}
+		}
+		
+		private void handle(SpawnEvent e)
+		{
+			GameObject object = e.getObject();
+			
+			if (object instanceof Spawnable)
+			{
+				((Spawnable) object).spawn();
+				
+				if (!gameObjectMap.contains(object))
+				{
+					addToMap(object);
+				}
+			}
+		}
+	}
+	
+	@Override
+	public void queueEvent(GameEvent e, boolean propagate)
+	{
+		eventManager.queueEvent(e);
+		
+		if (propagate)
+		{
+			synchronized (clientList)
+			{
+				for (ClientHandler client : clientList)
+				{
+					if (client.clientInstanceID != e.getInstanceID())
+					{
+						client.queueMessage(new GameEventMessage(e));
+					}
+				}
+			}
+		}
+	}
+	
+	private ServerLogicThread serverLogicThread = new ServerLogicThread(this);
+	
+	/**
+	 * The thread which handles the game logic loop
+	 * 
+	 * @author Jordan Neal
+	 */
+	private class ServerLogicThread extends Thread
+	{
+		GameInstance gameInstance;
+		
+		public ServerLogicThread(GameInstance instance)
+		{
+			this.gameInstance = instance;
+		}
+		
+		public void run()
+		{
+			currentTime = gameTimeline.getTime();
+			while(true)
+			{
+				long newTime = gameTimeline.getTime();
+				
+				while(newTime > currentTime)
+				{
+					currentTime++;
+					
+					eventManager.handleEvents(currentTime);
+					
+					synchronized (gameObjectMap)
+					{
+						for (MovingObject moveObject : movingObjects.values())
+						{
+							if (!(moveObject instanceof PlayerObject))
+							{
+								moveObject.doPhysics(gameInstance);
+							}
+							else if (((PlayerObject) moveObject).isAlive())
+							{
+								((PlayerObject) moveObject).doPhysics(gameInstance);
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+	
 	/**
 	 * A thread which listens for incoming game client connections. Upon a
 	 * successful connection, it then starts a GameClientHandler for that
@@ -40,7 +243,7 @@ public class MedusaServer extends GameInstance
 	 */
 	private class ConnectionListener extends Thread
 	{
-
+		
 		/** The ServerSocket object for accepting incoming connections. */
 		ServerSocket serverSocket;
 		
@@ -48,11 +251,13 @@ public class MedusaServer extends GameInstance
 		private ConnectionListener()
 		{
 			serverSocket = null;
-			
-			try {
+			try
+			{
 				serverSocket = new ServerSocket(7734);
-			} catch (IOException e) {
-				if(DEBUG)
+			}
+			catch (IOException e)
+			{
+				if (DEBUG)
 					System.err.println("IOException has occurred when trying to create the "
 							+ "ServerSocket - no action taken");
 			}
@@ -60,39 +265,51 @@ public class MedusaServer extends GameInstance
 		
 		public void run()
 		{
-			if (serverSocket != null) {
+			if (serverSocket != null)
+			{
 				System.out.println("Server is now ready to receive clients.\r\n");
 				
 				// start accepting incoming connections
-				while(true) {
+				while(true)
+				{
 					
 					ClientHandler newClient = null;
-					try {
+					try
+					{
 						newClient = new ClientHandler(serverSocket.accept());
-					} catch (IOException e) {
-						if(DEBUG)
+					}
+					catch (IOException e)
+					{
+						if (DEBUG)
 							System.err.println("IOException occurred while waiting for a connection");
-					}	
+					}
 					
-					if (newClient != null) {
-						synchronized (clientList) {
+					if (newClient != null)
+					{
+						synchronized (clientList)
+						{
+							// TODO send new client message to other clients
+							// ...
+							
 							clientList.add(newClient);
 						}
 						newClient.startThreads();
 					}
 					
 				}
-			} else {
-				if(DEBUG)
+			}
+			else
+			{
+				if (DEBUG)
 					System.err.println("Error: Could not start connectionListener - "
-						+ "serverSocket was NULL.");
+							+ "serverSocket was NULL.");
 			}
 		}
 	}
 	
 	/**
-	 * The list of GameClientHandler threads. Should contain exactly one for each active
-	 * game client connection.
+	 * The list of GameClientHandler threads. Should contain exactly one for
+	 * each active game client connection.
 	 */
 	private ArrayList<ClientHandler> clientList = new ArrayList<ClientHandler>();
 	
@@ -106,6 +323,8 @@ public class MedusaServer extends GameInstance
 	{
 		private PlayerObject playerObject;
 		
+		private UUID clientInstanceID;
+		
 		/**
 		 * disconnect from this client, and remove any gameObjects belonging to
 		 * it from the game state
@@ -114,174 +333,75 @@ public class MedusaServer extends GameInstance
 		protected void disconnect()
 		{
 			super.disconnect();
-			gameObjectMap.remove(playerObject.getID());
+			removeFromMap(playerObject);
 			
-			synchronized(clientList) {
+			synchronized (clientList)
+			{
 				clientList.remove(this);
 				
-				for (ClientHandler client : clientList) {
-					client.outputThread.outgoingPattern = DataPattern.GAME_OBJECTS_UPDATE_ALL;
-				}
-			}
-		}
-		
-		class ServerOutputThread extends NetworkOutputThread
-		{
-			ConcurrentHashMap<UUID, GameObject> g = new ConcurrentHashMap<UUID, GameObject>();
-			
-			public ServerOutputThread()
-			{
-				outgoingPattern = DataPattern.GAME_OBJECTS_UPDATE;
-			}
-			
-			protected void sendData()
-			{
-				switch (outgoingPattern) {
-					case GAME_OBJECTS_UPDATE :
-						sendUpdatedObjects();
-						break;
-					case GAME_OBJECTS_UPDATE_ALL :
-						sendAllObjects();
-						break;
-					default:
-						break;
-				}
-			}
-			
-			/**
-			 * Sends a map containing a copy of all updated objects to the client
-			 */
-			void sendUpdatedObjects()
-			{
-				// TODO - currently just sends anything that implements MovingObject, fix that
-				
-				g.clear();
-				synchronized (gameObjectMap) {
-					for (Map.Entry<UUID, GameObject> entry : gameObjectMap.entrySet()) {
-						GameObject value = entry.getValue();
-						
-						if(value instanceof MovingObject) {
-							
-							UUID key = value.getID();
-							
-							g.put(key, value);
-						}
-					}
-				}
-				
-				try {
-					networkOutput.reset();
-					//System.out.println("about to write g: "+ g);
-					networkOutput.writeObject(g);
-				} catch (EOFException e) {
-					if (DEBUG)
-						System.err.println("EOFException has occurred when trying to write updated objects"
-								+ " to the client - disconnecting");
-					disconnect();
-				} catch (SocketException e) {
-					if (DEBUG)
-						System.err.println("SocketException has occurred when trying to write updated objects"
-								+ " to the client - disconnecting");
-					disconnect();
-				} catch (IOException e) {
-					if (DEBUG)
-						System.err.println("IOException has occurred when trying to write updated objects"
-								+ " to the client - disconnecting");
-					disconnect();
-				}
-			}
-			
-			/**
-			 * Sends a map containing a copy of all objects to the client
-			 */
-			void sendAllObjects()
-			{
-				// Clear the copy map
-				g.clear();
-				
-				// Put all elements from gameObjectMap into the copy map
-				g.putAll(gameObjectMap);
-				
-				// TODO - remove this once proper waiting for outgoing messages implemented
-				outgoingPattern = DataPattern.GAME_OBJECTS_UPDATE;
-				
-				try {
-					// Reset the output stream
-					networkOutput.reset();
-					
-					// Write the copy map to the client
-					networkOutput.writeObject(g);
-					
-				} catch (EOFException e) {
-					if (DEBUG)
-						System.err.println("EOFException has occurred when trying to write all objects"
-								+ " to the client - disconnecting");
-					disconnect();
-				} catch (SocketException e) {
-					if (DEBUG)
-						System.err.println("SocketException has occurred when trying to write all objects"
-								+ " to the client - disconnecting");
-					disconnect();
-				} catch (IOException e) {
-					if (DEBUG)
-						System.err.println("IOException has occurred when trying to write all objects"
-								+ " to the client - disconnecting");
-					disconnect();
+				for (ClientHandler client : clientList)
+				{
+					client.queueMessage(new ClientDisconnectMessage(playerObject.getParentInstanceID()));
 				}
 			}
 		}
 		
 		class ServerInputThread extends NetworkInputThread
 		{
-			PlayerObject p = null;
-
 			@Override
-			protected void receiveData()
+			protected void respondToMessage()
 			{
-				switch (incomingPattern) {
-					case PLAYER_OBJECT_UPDATE :
-						receivePlayerObject();
+				switch(incomingMessage.getMessageType())
+				{
+					case "GameEventMessage":
+					{
+						GameEvent incomingEvent = ((GameEventMessage) incomingMessage).getEvent();
+						
+						queueEvent(incomingEvent, true);
+						
 						break;
+					}
+					case "ClientDisconnectMessage":
+					{
+						UUID disconnectedClient = ((ClientDisconnectMessage) incomingMessage).getClientID();
+						
+						// TODO remove events belonging to that client?
+						
+						removeFromMap(playerObjects.get(disconnectedClient));
+						
+						for(ClientHandler client : clientList)
+						{
+							if (client.clientInstanceID.equals(disconnectedClient))
+							{
+								clientList.remove(client);
+							}
+							else
+							{
+								client.queueMessage(incomingMessage);
+							}
+						}
+						
+						break;
+					}
+					case "NewClientMessage":
+					{
+						
+						break;
+					}
 					default:
 						break;
 				}
 			}
-
-			private void receivePlayerObject()
-			{
-				try {
-					p = (PlayerObject) networkInput.readObject();
-					
-					synchronized (playerObject) {
-						playerObject.becomeCopyOf(p);
-					}
-				} catch (ClassNotFoundException e) {
-					if(DEBUG)
-						System.err.println("ClassNotFoundException occurred when trying to read from the"
-							+ " client - disconnecting");
-					disconnect();
-				} catch (SocketException e) {
-					if(DEBUG)
-						System.err.println("SocketException occurred when trying to read from the"
-							+ " client - disconnecting");
-					disconnect();
-				} catch (IOException e) {
-					if(DEBUG)
-						System.err.println("IOException occurred when trying to read from the"
-							+ " client - disconnecting");
-					disconnect();
-				}
-			}
 		}
 		
-		protected ClientHandler(Socket sock)
+		public ClientHandler(Socket sock)
 		{
 			super(sock);
 		}
 		
 		protected void createThreads()
 		{
-			outputThread = new ServerOutputThread();
+			outputThread = new NetworkOutputThread();
 			inputThread = new ServerInputThread();
 		}
 		
@@ -289,14 +409,19 @@ public class MedusaServer extends GameInstance
 		{
 			connectionSocket = sock;
 			
-			try {
+			try
+			{
 				networkOutput = new ObjectOutputStream(this.connectionSocket.getOutputStream());
 				networkInput = new ObjectInputStream(this.connectionSocket.getInputStream());
 				
 				connected = true;
-			} catch(SocketException e) {
+			}
+			catch (SocketException e)
+			{
 				e.printStackTrace();
-			} catch (IOException e) {
+			}
+			catch (IOException e)
+			{
 				e.printStackTrace();
 			}
 		}
@@ -305,38 +430,56 @@ public class MedusaServer extends GameInstance
 		{
 			System.out.println("Accepted new client");
 			
-			try {
+			try
+			{
 				networkOutput.writeLong(gameTimeline.getTime());
 				
+				clientInstanceID = UUID.randomUUID();
+				
 				playerObject = createNewPlayer();
+				playerObject.setParentInstanceID(clientInstanceID);
 				networkOutput.writeObject(playerObject);
+				
+				for (ClientHandler client : clientList)
+				{
+					if (!client.clientInstanceID.equals(clientInstanceID))
+					{
+						client.queueMessage(new NewClientMessage(playerObject));
+					}
+				}
+				
 				networkOutput.writeObject(gameObjectMap);
 				
-				gameObjectMap.put(playerObject.getID(), playerObject);
+				addToMap(playerObject);
 				
-			} catch (IOException e) {
+			}
+			catch (IOException e)
+			{
 				e.printStackTrace();
-			} 
+			}
 		}
 	}
 	
 	/** Performs initial setup of GameObjects for this server */
 	private void setUpGameObjects()
 	{
-		synchronized (gameObjectMap) {
+		synchronized (gameObjectMap)
+		{
 			
 			// blocks
 			addToMap(new Block(50, 100));
 			addToMap(new Block(200, 100));
 			addToMap(new Block(264, 187));
-			for (int i = 1; i < 11; i++) {
+			for (int i = 1; i < 11; i++)
+			{
 				addToMap(new Block(i * 50, 300));
 			}
 			addToMap(new Block(50, 245));
 			addToMap(new Block(500, 245));
 			
 			// deathZones
-			for (int i = -2; i < 9; i++) {
+			for (int i = -2; i < 9; i++)
+			{
 				addToMap(new DeathZone(100 * i, 900));
 				addToMap(new DeathZone(100 * i, -200));
 				addToMap(new DeathZone(-200, i * 100));
@@ -348,54 +491,21 @@ public class MedusaServer extends GameInstance
 			addToMap(new SpawnPoint(52, 40));
 			addToMap(new SpawnPoint(260, 130));
 			
-			//moving platform
-			addToMap(new HorizontalMovingBlock(400,500));
+			// moving platform
+			addToMap(new HorizontalMovingBlock(400, 500));
 			addToMap(new HorizontalMovingBlock(320, 187));
-		}
-	}
-	
-	private ServerLogicThread serverLogicThread = new ServerLogicThread(this);
-	
-	/** The thread which handles the game logic loop
-	 * 
-	 * @author Jordan Neal
-	 */
-	private class ServerLogicThread extends Thread
-	{
-		GameInstance server;
-		public ServerLogicThread(GameInstance server)
-		{
-			this.server = server;
-		}
-		
-		public void run()
-		{
-			long currentTime = gameTimeline.getTime();
-			while(true) {
-				long newTime = gameTimeline.getTime();
-				
-				while (newTime > currentTime)
-				{
-					currentTime++;
-					
-					synchronized (gameObjectMap) {
-						for (Map.Entry<UUID, MovingObject> entry : movingObjects.entrySet()) {
-							MovingObject object = entry.getValue();
-							
-							if (!(object instanceof PlayerObject)) {
-								object.doPhysics(server);
-							}
-						}
-					}
-				}
-			}
 		}
 	}
 	
 	@Override
 	public void setup()
 	{
+		instanceID = UUID.randomUUID();
+		
 		setUpGameObjects();
+		
+		eventManager.registerHandler(new ServerEventHandler(), new String[ ] {
+				"CollisionEvent", "InputEvent", "DeathEvent", "SpawnEvent" });
 		
 		gameTimeline = new Timeline(1000000000L / TARGET_FRAMERATE);
 		
@@ -412,10 +522,7 @@ public class MedusaServer extends GameInstance
 	
 	public static void main(String[] args)
 	{
-		
 		MedusaServer gameServer = new MedusaServer();
-		
 		gameServer.runServer();
 	}
-	
 }

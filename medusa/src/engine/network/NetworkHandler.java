@@ -5,7 +5,6 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.net.SocketException;
-import java.util.NoSuchElementException;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Semaphore;
 
@@ -17,7 +16,7 @@ public abstract class NetworkHandler
 	public boolean connected;
 	
 	Semaphore outputLock = new Semaphore(0);
-	ConcurrentLinkedQueue<DataPattern> messageQueue = new ConcurrentLinkedQueue<DataPattern>();
+	ConcurrentLinkedQueue<NetworkMessage> messageQueue = new ConcurrentLinkedQueue<NetworkMessage>();
 	
 	protected NetworkOutputThread outputThread;
 	protected NetworkInputThread inputThread;
@@ -30,121 +29,125 @@ public abstract class NetworkHandler
 		connected = false;
 	}
 	
-	public void queueMessage(DataPattern message)
+	public void queueMessage(NetworkMessage message)
 	{
 		messageQueue.add(message);
 		outputLock.release();
 	}
 	
-	public abstract class NetworkOutputThread extends Thread
+	public class NetworkOutputThread extends Thread
 	{
-		public DataPattern outgoingPattern = DataPattern.INVALID_PATTERN;
+		NetworkMessage outgoingMessage;
 		
 		public void run()
 		{
-			while(connected) 
+			while(connected)
 			{
 				outputLoop();
 			}
 		}
 		
+		private void outputLoop()
+		{
+			outgoingMessage = null;
+			
+			// Wait for a message to be available
+			waitForMessage();
+			
+			// Send the message
+			sendMessage();
+		}
+		
 		private void waitForMessage()
 		{
-			try {
+			try
+			{
 				outputLock.acquire();
-			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
+			}
+			catch (InterruptedException e)
+			{
 				e.printStackTrace();
 			}
 		}
 		
-		void outputLoop()
+		private void sendMessage()
 		{
-			// Wait for a message to be available
-			//waitForMessage();
+			outgoingMessage = messageQueue.poll();
 			
-			// Send the data pattern of the next message in the queue
-			sendDataPattern();
-			
-			// If we haven't disconnected, send the rest of the data
-			if (connected) {
-				sendData();
+			if (outgoingMessage != null)
+			{
+				try
+				{
+					networkOutput.writeObject(outgoingMessage);
+				}
+				catch (SocketException e)
+				{
+					System.err.println("SocketException occurred when trying to send the"
+							+ " message: " + outgoingMessage);
+					disconnect();
+				}
+				catch (IOException e)
+				{
+					e.printStackTrace();
+				}
 			}
 		}
-		
-		void sendDataPattern()
-		{
-			// Get the data pattern
-//			try {
-//				outgoingPattern = messageQueue.remove();
-//			} catch (NoSuchElementException e) {
-//				// TODO queue was empty, handle it?
-//			}
-			
-			// Send the data pattern
-			try {
-				networkOutput.writeObject(outgoingPattern);
-			} catch (SocketException e) {
-				System.err.println("SocketException occurred when trying to send the"
-						+ " data pattern");
-				disconnect();
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-		}
-		
-		protected abstract void sendData();
-		
 	}
 	
 	public abstract class NetworkInputThread extends Thread
 	{
-		protected DataPattern incomingPattern;
+		protected NetworkMessage incomingMessage;
 		
 		public void run()
 		{
-			while(connected) {
+			while(connected)
+			{
 				inputLoop();
 			}
 		}
 		
-		protected void inputLoop()
+		private void inputLoop()
 		{
-			// Get the data pattern of incoming data
-			receiveDataPattern();
+			incomingMessage = null;
 			
-			// If the pattern is valid, and we haven't disconnected, receive the data
-			if (incomingPattern != DataPattern.INVALID_PATTERN && connected) {
-				receiveData();
+			receiveMessage();
+			
+			if (connected)
+			{
+				respondToMessage();
 			}
 		}
 		
-		protected void receiveDataPattern()
+		private void receiveMessage()
 		{
-			try {
-				incomingPattern = DataPattern.INVALID_PATTERN;
-				incomingPattern = (DataPattern) networkInput.readObject();
-			} catch (SocketException e) {
-				System.err.println("SocketException occurred when trying to read the"
-						+ " input pattern");
-				disconnect();
-			} catch (IOException e1) {
-				// TODO Auto-generated catch block
-				//e1.printStackTrace();
-			} catch (ClassNotFoundException e) {
+			try
+			{
+				incomingMessage = (NetworkMessage) networkInput.readObject();
+			}
+			catch (ClassNotFoundException e)
+			{
 				System.err.println("ClassNotFoundException occurred when trying to read the"
-						+ " input pattern");
+						+ " message");
 				disconnect();
+			}
+			catch (SocketException e)
+			{
+				System.err.println("SocketException occurred when trying to read the"
+						+ " message");
+				disconnect();
+			}
+			catch (IOException e)
+			{
+				e.printStackTrace();
 			}
 		}
 		
-		protected abstract void receiveData();
+		protected abstract void respondToMessage();
 	}
 	
 	/**
-	 * Constructor which sets up I/O streams and performs initial
-	 * communications for handling this game client.
+	 * Constructor which sets up I/O streams and performs initial communications
+	 * for handling this game client.
 	 */
 	protected NetworkHandler(Socket sock)
 	{
@@ -154,7 +157,8 @@ public abstract class NetworkHandler
 		
 		socketSetup(sock);
 		
-		if(connected) {
+		if (connected)
+		{
 			initDataTransactions();
 		}
 	}
@@ -162,9 +166,9 @@ public abstract class NetworkHandler
 	protected abstract void createThreads();
 	
 	protected abstract void socketSetup(Socket sock);
-
+	
 	protected abstract void initDataTransactions();
-
+	
 	public void startThreads()
 	{
 		inputThread.start();

@@ -6,6 +6,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import engine.gameEvents.EventManager;
+import engine.gameEvents.GameEvent;
 import engine.gameObjects.GameObject;
 import engine.gameObjects.MovingObject;
 import engine.gameObjects.PlayerObject;
@@ -23,7 +24,7 @@ public abstract class GameInstance extends PApplet
 {
 	public static final boolean DEBUG = true;
 	
-	private UUID instanceID = UUID.randomUUID();
+	protected UUID instanceID;
 	
 	public static final int TARGET_FRAMERATE = 60;
 	
@@ -34,14 +35,15 @@ public abstract class GameInstance extends PApplet
 	
 	public EventManager eventManager = new EventManager();
 	
+	public abstract void queueEvent(GameEvent e, boolean propagate);
+	
 	long currentTime;
 		
 	Timeline gameTimeline;
 	
 	ConcurrentHashMap<UUID, GameObject> gameObjectMap = new ConcurrentHashMap<UUID, GameObject>();
-	
+	ConcurrentHashMap<UUID, PlayerObject> playerObjects = new ConcurrentHashMap<UUID, PlayerObject>();
 	ConcurrentHashMap<UUID, MovingObject> movingObjects = new ConcurrentHashMap<UUID, MovingObject>();
-	
 	ConcurrentLinkedQueue<SpawnPoint> spawnPoints = new ConcurrentLinkedQueue<SpawnPoint>();
 	
 	public UUID getInstanceID()
@@ -60,6 +62,9 @@ public abstract class GameInstance extends PApplet
 			
 			if(object instanceof MovingObject)
 				movingObjects.put(object.getID(), (MovingObject) object);
+			
+			if(object instanceof PlayerObject)
+				playerObjects.put(((PlayerObject) object).getParentInstanceID(), (PlayerObject) object);
 		}
 	}
 	
@@ -74,6 +79,9 @@ public abstract class GameInstance extends PApplet
 			
 			if(object instanceof MovingObject)
 				movingObjects.remove(object.getID());
+			
+			if(object instanceof PlayerObject)
+				playerObjects.remove(((PlayerObject) object).getParentInstanceID());
 		}
 	}
 	

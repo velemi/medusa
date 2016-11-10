@@ -78,7 +78,7 @@ public abstract class GameEvent implements Serializable, Comparable<GameEvent>
 		return this.priority;
 	}
 	
-	public UUID getSourceID()
+	public UUID getInstanceID()
 	{
 		return this.instanceID;
 	}

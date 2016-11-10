@@ -3,6 +3,7 @@ package engine.gameEvents;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.PriorityBlockingQueue;
 
@@ -10,11 +11,16 @@ public class EventManager
 {
 	ConcurrentHashMap<String, List<EventHandler>> handlerMap;
 	
+	ConcurrentHashMap<UUID, PriorityBlockingQueue<GameEvent>> instanceQueues;
+	
 	PriorityBlockingQueue<GameEvent> eventQueue;
+	
+	long GVT;
 	
 	public EventManager()
 	{
 		handlerMap = new ConcurrentHashMap<String, List<EventHandler>>();
+		instanceQueues = new ConcurrentHashMap<UUID, PriorityBlockingQueue<GameEvent>>();
 		eventQueue = new PriorityBlockingQueue<GameEvent>();
 	}
 	
@@ -54,11 +60,16 @@ public class EventManager
 	
 	public void queueEvent(GameEvent e)
 	{
-		//TODO make sure only one copy of the "same" event is queued for the same timestamp
+//		instanceQueues.putIfAbsent(e.getInstanceID(),
+//							new PriorityBlockingQueue<GameEvent>());
+//		
+//		PriorityBlockingQueue<GameEvent> instanceQueue = instanceQueues.get(e.getInstanceID());
+//		
+//		instanceQueue.add(e);
+		
+		//TODO make sure only one copy of the "same" event is queued for the same timestamp, at least for InputEvents
 		
 		eventQueue.add(e);
-		
-		//TODO send a copy of the event to other machines
 	}
 	
 	private void dispatchToHandlers(GameEvent e)
@@ -74,8 +85,27 @@ public class EventManager
 		}
 	}
 	
+	@SuppressWarnings("unused")
+	private long calcGVT()
+	{
+		long newGVT = Long.MAX_VALUE;
+		
+		for(PriorityBlockingQueue<GameEvent> instQueue : instanceQueues.values())
+		{
+			long ts = instQueue.peek().getTimeStamp();
+			if (ts < newGVT)
+			{
+				newGVT = ts;
+			}
+		}
+		
+		return newGVT;
+	}
+	
 	public void handleEvents(long currentTime)
 	{
+		
+		
 		//TODO rewrite once events are handled across all machines?
 		while(eventQueue.peek() != null && (eventQueue.peek().getTimeStamp() <= currentTime))
 		{
