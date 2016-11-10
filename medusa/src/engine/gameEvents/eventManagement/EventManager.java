@@ -1,4 +1,4 @@
-package engine.gameEvents;
+package engine.gameEvents.eventManagement;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.PriorityBlockingQueue;
+import engine.gameEvents.GameEvent;
 
 public class EventManager
 {

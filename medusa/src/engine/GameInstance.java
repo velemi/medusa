@@ -1,17 +1,18 @@
-package engine.core;
+package engine;
 
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import engine.gameEvents.EventManager;
 import engine.gameEvents.GameEvent;
+import engine.gameEvents.eventManagement.EventManager;
 import engine.gameObjects.GameObject;
-import engine.gameObjects.MovingObject;
 import engine.gameObjects.PlayerObject;
-import engine.gameObjects.RenderableObject;
 import engine.gameObjects.SpawnPoint;
+import engine.gameObjects.objectClasses.MovingObject;
+import engine.gameObjects.objectClasses.RenderableObject;
+import engine.time.Timeline;
 import processing.core.PApplet;
 
 /**

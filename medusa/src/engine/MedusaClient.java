@@ -1,4 +1,4 @@
-package engine.core;
+package engine;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -10,22 +10,23 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import engine.gameEvents.CollisionEvent;
 import engine.gameEvents.DeathEvent;
-import engine.gameEvents.EventHandler;
 import engine.gameEvents.GameEvent;
 import engine.gameEvents.InputEvent;
 import engine.gameEvents.NullEvent;
 import engine.gameEvents.SpawnEvent;
+import engine.gameEvents.eventManagement.EventHandler;
 import engine.gameObjects.DeathZone;
 import engine.gameObjects.GameObject;
-import engine.gameObjects.Killable;
-import engine.gameObjects.MovingObject;
 import engine.gameObjects.PlayerObject;
-import engine.gameObjects.Spawnable;
-import engine.network.ClientDisconnectMessage;
-import engine.network.GameEventMessage;
+import engine.gameObjects.objectClasses.Killable;
+import engine.gameObjects.objectClasses.MovingObject;
+import engine.gameObjects.objectClasses.Spawnable;
 import engine.network.NetworkHandler;
-import engine.network.NetworkMessage;
-import engine.network.NewClientMessage;
+import engine.network.messages.ClientDisconnectMessage;
+import engine.network.messages.GameEventMessage;
+import engine.network.messages.NetworkMessage;
+import engine.network.messages.NewClientMessage;
+import engine.time.Timeline;
 import processing.core.PApplet;
 
 /**
@@ -456,7 +457,7 @@ public class MedusaClient extends GameInstance
 	
 	public void runClient()
 	{
-		PApplet.main("engine.core.MedusaClient");
+		PApplet.main("engine.time.MedusaClient");
 	}
 	
 	public static void main(String[] args)

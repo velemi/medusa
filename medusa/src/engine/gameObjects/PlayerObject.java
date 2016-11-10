@@ -3,8 +3,12 @@ package engine.gameObjects;
 import java.util.ArrayList;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-import engine.core.GameInstance;
+import engine.GameInstance;
 import engine.gameEvents.CollisionEvent;
+import engine.gameObjects.objectClasses.Killable;
+import engine.gameObjects.objectClasses.MovingObject;
+import engine.gameObjects.objectClasses.RenderableObject;
+import engine.gameObjects.objectClasses.Spawnable;
 import processing.core.PApplet;
 
 /**

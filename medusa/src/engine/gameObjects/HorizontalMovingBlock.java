@@ -1,6 +1,7 @@
 package engine.gameObjects;
 
-import engine.core.GameInstance;
+import engine.GameInstance;
+import engine.gameObjects.objectClasses.MovingObject;
 
 public class HorizontalMovingBlock extends Block implements MovingObject
 {

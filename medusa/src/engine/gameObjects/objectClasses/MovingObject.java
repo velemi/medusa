@@ -1,6 +1,6 @@
-package engine.gameObjects;
+package engine.gameObjects.objectClasses;
 
-import engine.core.GameInstance;
+import engine.GameInstance;
 
 public interface MovingObject
 {

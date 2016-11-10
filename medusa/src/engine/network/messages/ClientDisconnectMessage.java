@@ -1,4 +1,4 @@
-package engine.network;
+package engine.network.messages;
 
 import java.util.UUID;
 

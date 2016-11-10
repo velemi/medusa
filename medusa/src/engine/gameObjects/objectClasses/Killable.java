@@ -1,4 +1,4 @@
-package engine.gameObjects;
+package engine.gameObjects.objectClasses;
 
 public interface Killable
 {

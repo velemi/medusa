@@ -1,4 +1,6 @@
-package engine.gameObjects;
+package engine.gameObjects.objectClasses;
+
+import engine.gameObjects.GameObject;
 
 public interface EffectOnContact
 {

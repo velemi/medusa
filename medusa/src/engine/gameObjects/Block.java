@@ -1,5 +1,6 @@
 package engine.gameObjects;
 
+import engine.gameObjects.objectClasses.RenderableObject;
 import processing.core.PApplet;
 
 /**

@@ -1,5 +1,7 @@
 package engine.gameObjects;
 
+import engine.gameObjects.objectClasses.EffectOnContact;
+import engine.gameObjects.objectClasses.RenderableObject;
 import processing.core.PApplet;
 
 public class DeathZone
