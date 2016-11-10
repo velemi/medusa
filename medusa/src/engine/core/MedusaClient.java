@@ -82,13 +82,13 @@ public class MedusaClient extends GameInstance
 					&& (objects[1] instanceof DeathZone))
 			{
 				queueEvent(new DeathEvent(e, e.getTimeStamp()
-						+ 1, 3, getInstanceID(), objects[0].getID()), false);
+						+ 1, getInstanceID(), objects[0].getID()), false);
 			}
 			else if ((objects[1] instanceof PlayerObject)
 					&& (objects[0] instanceof DeathZone))
 			{
 				queueEvent(new DeathEvent(e, e.getTimeStamp()
-						+ 1, 3, getInstanceID(), objects[1].getID()), false);
+						+ 1, getInstanceID(), objects[1].getID()), false);
 			}
 		}
 		
@@ -147,7 +147,7 @@ public class MedusaClient extends GameInstance
 				
 				if (object instanceof PlayerObject)
 					queueEvent(new SpawnEvent(e, e.getTimeStamp()
-							+ PlayerObject.DEFAULT_RESPAWN, 4, getInstanceID(), object), false);
+							+ PlayerObject.DEFAULT_RESPAWN, getInstanceID(), object), false);
 			}
 		}
 		
@@ -395,7 +395,7 @@ public class MedusaClient extends GameInstance
 		}
 		
 		if (!inputString.equals(""))
-			queueEvent(new InputEvent(gameTimeline.getTime(), 1, getInstanceID(), inputString), true);
+			queueEvent(new InputEvent(gameTimeline.getTime(), getInstanceID(), inputString), true);
 	}
 	
 	/*
@@ -423,7 +423,7 @@ public class MedusaClient extends GameInstance
 		}
 		
 		if (!inputString.equals(""))
-			queueEvent(new InputEvent(gameTimeline.getTime(), 1, getInstanceID(), inputString), true);
+			queueEvent(new InputEvent(gameTimeline.getTime(), getInstanceID(), inputString), true);
 	}
 	
 	@Override

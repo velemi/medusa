@@ -88,7 +88,7 @@ public class MedusaServer extends GameInstance
 					&& (objects[0] instanceof DeathZone))
 			{
 				eventManager.queueEvent(new DeathEvent(e, e.getTimeStamp()
-						+ 1, 3, getInstanceID(), objects[1].getID()));
+						+ 1, getInstanceID(), objects[1].getID()));
 			}
 		}
 		
@@ -147,7 +147,7 @@ public class MedusaServer extends GameInstance
 				
 				if (object instanceof PlayerObject)
 					eventManager.queueEvent(new SpawnEvent(e, e.getTimeStamp()
-							+ PlayerObject.DEFAULT_RESPAWN, 4, getInstanceID(), object));
+							+ PlayerObject.DEFAULT_RESPAWN, getInstanceID(), object));
 			}
 		}
 		
