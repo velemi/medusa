@@ -13,6 +13,7 @@ import engine.gameEvents.DeathEvent;
 import engine.gameEvents.EventHandler;
 import engine.gameEvents.GameEvent;
 import engine.gameEvents.InputEvent;
+import engine.gameEvents.NullEvent;
 import engine.gameEvents.SpawnEvent;
 import engine.gameObjects.DeathZone;
 import engine.gameObjects.GameObject;
@@ -219,6 +220,8 @@ public class MedusaClient extends GameInstance
 							}
 						}
 					}
+					
+					queueEvent(new NullEvent(currentTime, instanceID), true);
 				}
 			}
 		}
