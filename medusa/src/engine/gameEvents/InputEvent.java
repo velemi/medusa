@@ -1,6 +1,7 @@
 package engine.gameEvents;
 
 import java.util.UUID;
+import engine.gameObjects.PlayerObject;
 
 public class InputEvent extends GameEvent
 {
@@ -8,33 +9,41 @@ public class InputEvent extends GameEvent
 	
 	private static final int DEFAULT_PRIORITY = 1;
 	
+	private PlayerObject player;
+	
 	private String input;
 	
-	public InputEvent(long ts, UUID instanceID, String input)
+	public InputEvent(long ts, UUID instanceID, String input, PlayerObject player)
 	{
-		this(ts, DEFAULT_PRIORITY, instanceID, input);
+		this(ts, DEFAULT_PRIORITY, instanceID, input, player);
 	}
 	
-	public InputEvent(long ts, int priority, UUID instanceID, String input)
+	public InputEvent(long ts, int priority, UUID instanceID, String input, PlayerObject player)
 	{
-		this(null, ts, priority, instanceID, input);
+		this(null, ts, priority, instanceID, input, player);
 	}
 	
-	public InputEvent(GameEvent parent, long ts, UUID instanceID, String input)
+	public InputEvent(GameEvent parent, long ts, UUID instanceID, String input, PlayerObject player)
 	{
-		this(parent, ts, DEFAULT_PRIORITY, instanceID, input);
+		this(parent, ts, DEFAULT_PRIORITY, instanceID, input, player);
 	}
 	
 	public InputEvent(GameEvent parent, long ts, int priority, UUID instanceID,
-			String input)
+			String input, PlayerObject player)
 	{
 		super(parent, ts, priority, instanceID);
 		
 		this.input = input;
+		this.player = player;
 	}
 	
 	public String getInput()
 	{
 		return input;
+	}
+	
+	public PlayerObject getPlayer()
+	{
+		return player;
 	}
 }

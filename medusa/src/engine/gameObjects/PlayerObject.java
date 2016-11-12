@@ -282,12 +282,17 @@ public class PlayerObject
 	
 	private synchronized void handleNonPhysicalCollisions(GameInstance parent)
 	{
-		ConcurrentHashMap<UUID, GameObject> collisions = parent.getTouching(this);
-		
-		for (UUID entry : collisions.keySet())
+		if (parent.replayManager != null)
 		{
-			parent.queueEvent(new CollisionEvent(parent.getCurrentTime()
-					+ 1, parentInstanceID, this.getID(), entry), false);
+			if (!parent.replayManager.playing)
+			{
+				ConcurrentHashMap<UUID, GameObject> collisions = parent.getTouching(this);
+				for (UUID entry : collisions.keySet())
+				{
+					parent.queueEvent(new CollisionEvent(parent.getCurrentTime()
+							+ 1, parentInstanceID, this.getID(), entry), false);
+				}
+			} 
 		}
 	}
 	
@@ -368,5 +373,50 @@ public class PlayerObject
 		movementDirection = 0;
 		
 		canJump = false;
+	}
+
+	public int getMovementDirection()
+	{
+		return movementDirection;
+	}
+
+	public void setMovementDirection(int movementDirection)
+	{
+		this.movementDirection = movementDirection;
+	}
+
+	public float gethSpeed()
+	{
+		return hSpeed;
+	}
+
+	public void sethSpeed(float hSpeed)
+	{
+		this.hSpeed = hSpeed;
+	}
+
+	public float getvSpeed()
+	{
+		return vSpeed;
+	}
+
+	public void setvSpeed(float vSpeed)
+	{
+		this.vSpeed = vSpeed;
+	}
+
+	public boolean isLeftPressed()
+	{
+		return leftPressed;
+	}
+
+	public boolean isRightPressed()
+	{
+		return rightPressed;
+	}
+
+	public boolean isJumpPressed()
+	{
+		return jumpPressed;
 	}
 }

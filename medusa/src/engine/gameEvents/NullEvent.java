@@ -6,7 +6,7 @@ public class NullEvent extends GameEvent
 {
 	private static final long serialVersionUID = 2263375812712767408L;
 	
-	private static final int DEFAULT_PRIORITY = 0;
+	private static final int DEFAULT_PRIORITY = Integer.MIN_VALUE;
 	
 	public NullEvent(long ts, UUID instanceID)
 	{

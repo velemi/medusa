@@ -65,5 +65,15 @@ public class HorizontalMovingBlock extends Block implements MovingObject
 		
 		x += hSpeed;
 	}
+
+	public int getMovementDirection()
+	{
+		return movementDirection;
+	}
+
+	public void setMovementDirection(int movementDirection)
+	{
+		this.movementDirection = movementDirection;
+	}
 	
 }

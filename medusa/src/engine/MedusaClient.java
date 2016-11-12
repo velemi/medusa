@@ -8,6 +8,7 @@ import java.net.UnknownHostException;
 import java.util.Scanner;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.PriorityBlockingQueue;
 import engine.gameEvents.CollisionEvent;
 import engine.gameEvents.DeathEvent;
 import engine.gameEvents.GameEvent;
@@ -15,6 +16,7 @@ import engine.gameEvents.InputEvent;
 import engine.gameEvents.NullEvent;
 import engine.gameEvents.SpawnEvent;
 import engine.gameEvents.eventManagement.EventHandler;
+import engine.gameEvents.eventManagement.EventManager;
 import engine.gameObjects.DeathZone;
 import engine.gameObjects.GameObject;
 import engine.gameObjects.PlayerObject;
@@ -46,6 +48,8 @@ public class MedusaClient extends GameInstance
 		@Override
 		public void handleEvent(GameEvent e)
 		{
+			//System.out.println(e.getEventType());
+			
 			switch (e.getEventType())
 			{
 				case "CollisionEvent":
@@ -81,13 +85,13 @@ public class MedusaClient extends GameInstance
 			objects[1] = gameObjectMap.get(e.getIDs()[1]);
 			
 			if ((objects[0] instanceof PlayerObject)
-					&& (objects[1] instanceof DeathZone))
+					&& (objects[1] instanceof DeathZone) && !replayManager.playing)
 			{
 				queueEvent(new DeathEvent(e, e.getTimeStamp()
 						+ 1, getInstanceID(), objects[0].getID()), false);
 			}
 			else if ((objects[1] instanceof PlayerObject)
-					&& (objects[0] instanceof DeathZone))
+					&& (objects[0] instanceof DeathZone) && !replayManager.playing)
 			{
 				queueEvent(new DeathEvent(e, e.getTimeStamp()
 						+ 1, getInstanceID(), objects[1].getID()), false);
@@ -100,6 +104,12 @@ public class MedusaClient extends GameInstance
 			
 			if (p != null)
 			{
+//				if (e.getPlayer() != null)
+//				{
+//					p.x = e.getPlayer().x;
+//					p.y = e.getPlayer().y;
+//				}
+				
 				switch (e.getInput())
 				{
 					case "LEFT PRESSED":
@@ -147,7 +157,7 @@ public class MedusaClient extends GameInstance
 				((Killable) object).kill();
 				removeFromMap(object);
 				
-				if (object instanceof PlayerObject)
+				if (object instanceof PlayerObject && !replayManager.playing)
 					queueEvent(new SpawnEvent(e, e.getTimeStamp()
 							+ PlayerObject.DEFAULT_RESPAWN, getInstanceID(), object), false);
 			}
@@ -172,6 +182,8 @@ public class MedusaClient extends GameInstance
 	@Override
 	public void queueEvent(GameEvent e, boolean propagate)
 	{
+		//System.out.println(e);
+		
 		eventManager.queueEvent(e);
 		
 		if (propagate)
@@ -203,8 +215,10 @@ public class MedusaClient extends GameInstance
 				
 				while(newTime > currentTime)
 				{
+					queueEvent(new NullEvent(currentTime, instanceID), true);
 					currentTime++;
 					
+					//System.out.println("TIME: " + gameTimeline.getTime());
 					eventManager.handleEvents(currentTime);
 					
 					synchronized (gameObjectMap)
@@ -221,8 +235,6 @@ public class MedusaClient extends GameInstance
 							}
 						}
 					}
-					
-					queueEvent(new NullEvent(currentTime, instanceID), true);
 				}
 			}
 		}
@@ -265,7 +277,7 @@ public class MedusaClient extends GameInstance
 					{
 						UUID disconnectedClient = ((ClientDisconnectMessage) incomingMessage).getClientID();
 						
-						// TODO remove events belonging to that client?
+						eventManager.removeQueue(disconnectedClient);
 						
 						removeFromMap(playerObjects.get(disconnectedClient));
 						
@@ -308,6 +320,7 @@ public class MedusaClient extends GameInstance
 			}
 			else
 			{
+				System.out.println("DEBUG IS ON: AUTOMATICALLY CONNECTING TO SERVER ON LOCALHOST");
 				serverHostname = "localhost";
 			}
 			
@@ -333,17 +346,36 @@ public class MedusaClient extends GameInstance
 			}
 		}
 		
+		@SuppressWarnings("unchecked")
 		protected void initDataTransactions()
 		{
 			try
 			{
+				PriorityBlockingQueue<GameEvent> events = (PriorityBlockingQueue<GameEvent>) networkInput.readObject();
+				
+				// long serverGVT = networkInput.readLong();
+				
 				gameTimeline = new Timeline(networkInput.readLong(), 1000000000L
 						/ TARGET_FRAMERATE);
 						
 				playerObject = (PlayerObject) networkInput.readObject();
 				instanceID = playerObject.getParentInstanceID();
 				
-				@SuppressWarnings("unchecked")
+				for (GameEvent e : events)
+				{
+					queueEvent(e, false);
+					// eventManager.queueEvent(new NullEvent(e.getTimeStamp(),
+					// instanceID));
+				}
+				
+				eventManager.registerHandler(new ClientEventHandler(), new String[ ] {
+						"CollisionEvent", "InputEvent", "DeathEvent", "SpawnEvent" });
+				
+//				while (eventManager.getGVT() < serverGVT)
+//				{
+//					queueEvent(new NullEvent(eventManager.getGVT() + 1, instanceID), false);
+//				}
+				
 				ConcurrentHashMap<UUID, GameObject> g = (ConcurrentHashMap<UUID, GameObject>) networkInput.readObject();
 				
 				for (GameObject o : g.values())
@@ -399,7 +431,7 @@ public class MedusaClient extends GameInstance
 		}
 		
 		if (!inputString.equals(""))
-			queueEvent(new InputEvent(gameTimeline.getTime(), getInstanceID(), inputString), true);
+			queueEvent(new InputEvent(gameTimeline.getTime() + 1, getInstanceID(), inputString, playerObject), true);
 	}
 	
 	/*
@@ -427,15 +459,12 @@ public class MedusaClient extends GameInstance
 		}
 		
 		if (!inputString.equals(""))
-			queueEvent(new InputEvent(gameTimeline.getTime(), getInstanceID(), inputString), true);
+			queueEvent(new InputEvent(gameTimeline.getTime() + 1, getInstanceID(), inputString, playerObject), true);
 	}
 	
 	@Override
 	public void setup()
-	{
-		eventManager.registerHandler(new ClientEventHandler(), new String[ ] {
-				"CollisionEvent", "InputEvent", "DeathEvent", "SpawnEvent" });
-				
+	{	
 		// Try to establish a connection to the server by instantiating a server
 		// handler
 		serverHandler = new ServerHandler(new Socket());
@@ -457,7 +486,7 @@ public class MedusaClient extends GameInstance
 	
 	public void runClient()
 	{
-		PApplet.main("engine.time.MedusaClient");
+		PApplet.main("engine.MedusaClient");
 	}
 	
 	public static void main(String[] args)

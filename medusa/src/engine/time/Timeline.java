@@ -12,6 +12,9 @@ public class Timeline
 	// The number of ticks of the anchoring Timeline which equals one tick on this Timeline
 	private long tickSize;
 	
+	private long pauseTime;
+	boolean paused = false;
+	
 	/** 
 	 * Constructor which creates a new Timeline object, anchored to real time, with the
 	 * specified tick size (measured in nanoseconds).
@@ -19,6 +22,15 @@ public class Timeline
 	public Timeline(long tickSize)
 	{
 		this(0, tickSize);
+	}
+	
+	public Timeline(Timeline base)
+	{
+		this.anchorTimeline = base.anchorTimeline;
+		this.origin = base.origin;
+		this.tickSize = base.tickSize;
+		this.pauseTime = base.pauseTime;
+		this.paused = base.paused;
 	}
 
 	public Timeline(long currentTime, long tickSize)
@@ -52,13 +64,54 @@ public class Timeline
 	 */
 	public long getTime()
 	{
-		if(anchorTimeline == null)	//if anchored to real time
+		if (!paused)
 		{
-			return (System.nanoTime() - this.origin) / this.tickSize;
+			if (anchorTimeline == null)	//if anchored to real time
+			{
+				return (System.nanoTime() - this.origin) / this.tickSize;
+			}
+			else	//if anchored to another timeline
+			{
+				return (anchorTimeline.getTime() - this.origin) / this.tickSize;
+			} 
 		}
-		else	//if anchored to another timeline
+		else
 		{
-			return (anchorTimeline.getTime() - this.origin) / this.tickSize;
+			return pauseTime;
+		}
+	}
+	
+	public void pause()
+	{
+		if(!paused)
+		{
+			if (anchorTimeline == null)	//if anchored to real time
+			{
+				pauseTime = (System.nanoTime() - this.origin) / this.tickSize;
+			}
+			else	//if anchored to another timeline
+			{
+				pauseTime = (anchorTimeline.getTime() - this.origin) / this.tickSize;
+			}
+			
+			paused = true;
+		}
+	}
+	
+	public void resume()
+	{
+		if(paused)
+		{
+			if (anchorTimeline == null)	//if anchored to real time
+			{
+				origin += ((System.nanoTime() - this.origin) / this.tickSize) - pauseTime;
+			}
+			else	//if anchored to another timeline
+			{
+				origin += ((anchorTimeline.getTime() - this.origin) / this.tickSize) - pauseTime;
+			}
+			
+			paused = false;
 		}
 	}
 	
