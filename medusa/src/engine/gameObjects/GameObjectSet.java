@@ -14,8 +14,14 @@ public class GameObjectSet
 	private HashMap<UUID, PlayerObject> playerObjects = new HashMap<UUID, PlayerObject>();
 	
 	private ArrayList<GameObject> renderables = new ArrayList<GameObject>();
+	private ArrayList<GameObject> spawnPoints = new ArrayList<GameObject>();
 	
 	public GameObjectSet()
+	{
+		
+	}
+	
+	public GameObjectSet(GameObjectSet source)
 	{
 		
 	}
@@ -32,6 +38,8 @@ public class GameObjectSet
 				playerObjects.put(((PlayerObject) o).parentInstanceID, (PlayerObject) o);
 			if (o instanceof RenderableObject)
 				renderables.add(o);
+			if (o instanceof SpawnPoint)
+				spawnPoints.add(o);
 		}
 		
 		lock.writeLock().unlock();
@@ -49,6 +57,8 @@ public class GameObjectSet
 				playerObjects.remove(((PlayerObject) o).parentInstanceID);
 			if (o instanceof RenderableObject)
 				renderables.remove((RenderableObject) o);
+			if (o instanceof SpawnPoint)
+				spawnPoints.remove(o);
 		}
 		
 		lock.writeLock().unlock();
@@ -85,6 +95,8 @@ public class GameObjectSet
 		
 		if (t.equals(RenderableObject.class))
 			objects = (ArrayList<GameObject>) this.renderables.clone();
+		else if (t.equals(SpawnPoint.class))
+			objects = (ArrayList<GameObject>) this.spawnPoints.clone();
 		else 
 		{
 			objects = new ArrayList<GameObject>();
@@ -99,5 +111,24 @@ public class GameObjectSet
 		lock.readLock().unlock();
 		
 		return objects;
+	}
+	
+	public ArrayList<GameObject> getColliding(GameObject o, boolean physicalOnly)
+	{
+		lock.readLock().lock();
+		
+		ArrayList<GameObject> c = new ArrayList<GameObject>();
+		
+		for(GameObject e : objectMap.values())
+		{
+			if (e.intersects(o) && (!physicalOnly || e.hasPhysicalCollision()))
+			{
+				c.add(e);
+			}
+		}
+
+		lock.readLock().unlock();
+		
+		return c;
 	}
 }

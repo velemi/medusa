@@ -157,15 +157,6 @@ public class PlayerObject
 		this.parentInstanceID = id;
 	}
 	
-	public synchronized void becomeCopyOf(PlayerObject other)
-	{
-		becomeCopyOf((GameObject) other);
-		
-		this.color[0] = other.color[0];
-		this.color[1] = other.color[1];
-		this.color[2] = other.color[2];
-	}
-	
 	/*
 	 * Defines behavior to be run when rendering this PlayerObject.
 	 * (non-Javadoc)
@@ -282,18 +273,18 @@ public class PlayerObject
 	
 	private synchronized void handleNonPhysicalCollisions(GameInstance parent)
 	{
-		if (parent.replayManager != null)
-		{
-			if (!parent.replayManager.playing)
-			{
+//		if (parent.replayManager != null)
+//		{
+//			if (!parent.replayManager.playing)
+//			{
 				ConcurrentHashMap<UUID, GameObject> collisions = parent.getTouching(this);
 				for (UUID entry : collisions.keySet())
 				{
 					parent.queueEvent(new CollisionEvent(parent.getCurrentTime()
 							+ 1, parentInstanceID, this.getID(), entry), false);
 				}
-			} 
-		}
+//			} 
+//		}
 	}
 	
 	/** Updates this PlayerObject's position based on its current state. */
@@ -385,22 +376,22 @@ public class PlayerObject
 		this.movementDirection = movementDirection;
 	}
 
-	public float gethSpeed()
+	public float getHSpeed()
 	{
 		return hSpeed;
 	}
 
-	public void sethSpeed(float hSpeed)
+	public void setHSpeed(float hSpeed)
 	{
 		this.hSpeed = hSpeed;
 	}
 
-	public float getvSpeed()
+	public float getVSpeed()
 	{
 		return vSpeed;
 	}
 
-	public void setvSpeed(float vSpeed)
+	public void setVSpeed(float vSpeed)
 	{
 		this.vSpeed = vSpeed;
 	}

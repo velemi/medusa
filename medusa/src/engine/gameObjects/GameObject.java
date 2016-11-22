@@ -42,18 +42,6 @@ public class GameObject
 		return false;
 	}
 	
-	public synchronized void becomeCopyOf(GameObject other)
-	{
-		this.x = other.x;
-		this.y = other.y;
-		this.height = other.height;
-		this.width = other.width;
-		
-		this.physicalCollision = other.physicalCollision;
-		
-		this.objectID = other.objectID;
-	}
-	
 	public synchronized GameObject clone()
 	{
 		GameObject cloneObject = (GameObject) super.clone();

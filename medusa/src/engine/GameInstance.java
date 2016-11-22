@@ -2,14 +2,10 @@ package engine;
 
 import java.util.ArrayList;
 import java.util.Map;
+import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.PriorityBlockingQueue;
-import engine.gameEvents.EndReplayEvent;
 import engine.gameEvents.GameEvent;
-import engine.gameEvents.InputEvent;
-import engine.gameEvents.eventManagement.EventHandler;
 import engine.gameEvents.eventManagement.EventManager;
 import engine.gameObjects.GameObject;
 import engine.gameObjects.GameObjectSet;
@@ -30,224 +26,9 @@ public abstract class GameInstance extends PApplet
 {
 	public static final boolean DEBUG = true;
 	
-	Object objectMapLock = new Object();
+	//Object objectMapLock = new Object();
 	
 	protected UUID instanceID;
-	
-	public ReplayManager replayManager;
-	
-	public class ReplayManager
-	{
-		GameInstance instance;
-		
-		boolean record = false;
-		
-		public boolean playing = false;
-		
-		long startTime;
-		long endTime;
-		
-		Timeline replayTimeline;
-		Timeline mainTimeline;
-		
-		ConcurrentHashMap<UUID, GameObject> objectStart = new ConcurrentHashMap<UUID, GameObject>();
-		ConcurrentHashMap<UUID, GameObject> objectEnd = new ConcurrentHashMap<UUID, GameObject>();
-		
-		PriorityBlockingQueue<GameEvent> eventQueue = new PriorityBlockingQueue<GameEvent>();
-		
-		public ReplayManager(GameInstance instance)
-		{
-			this.instance = instance;
-			
-			eventManager.registerHandler(new ReplayEventHandler(), new String[] {
-					"NullEvent", "CollisionEvent", "InputEvent", "DeathEvent", "SpawnEvent" ,
-					"EndReplayEvent" });
-		}
-		
-		public void startRecording()
-		{
-			System.out.println("Starting a recording.");
-			startTime = currentTime;
-			objectStart.clear();
-			synchronized (objectMapLock)
-			{
-				for (GameObject o : gameObjectMap.values())
-				{
-					
-					
-					objectStart.put(o.getID(), o.clone());
-					//System.out.println(o.clone());
-				}
-			}
-			eventQueue.clear();
-			
-			replayTimeline = new Timeline(startTime, 1000000000L / TARGET_FRAMERATE);
-			replayTimeline.pause();
-			
-			record = true;
-		}
-		
-		public void stopRecording()
-		{
-			System.out.println("Stopping recording.");
-			objectEnd.clear();
-			synchronized (objectMapLock)
-			{
-				for (GameObject o : gameObjectMap.values())
-				{
-					objectEnd.put(o.getID(), o.clone());
-				}
-			}
-			endTime = currentTime;
-			
-			record = false;
-			
-			gameTimeline.resume();
-			
-			beginPlayback();
-		}
-		
-		private void beginPlayback()
-		{
-			System.out.println("Beginning playback.");
-			
-			gameObjectMap = new ConcurrentHashMap<UUID, GameObject>(objectStart);
-			
-			
-			
-			gameTimeline.pause();
-			mainTimeline = new Timeline(gameTimeline);
-			
-			System.out.println(startTime);
-			
-			while(!eventQueue.isEmpty())
-			{
-				GameEvent e = eventQueue.poll();
-				System.out.println(e.getTimeStamp() + ": "+ e);
-				queueEvent(e, false);
-				
-			}
-			
-			GameEvent f = new EndReplayEvent(endTime, 0, instanceID);
-			System.out.println(f.getTimeStamp() + ": "+ f);
-			queueEvent(f, false);
-			
-			replayTimeline.resume();
-			currentTime = replayTimeline.getTime();
-			
-			//gameTimeline.resume();
-			
-			playing = true;
-			
-			while (playing)
-			{
-				long newTime = replayTimeline.getTime();
-				
-				//System.out.println("cur:" + currentTime);
-				
-				//System.out.println(newTime);
-				
-				eventManager.handleEvents(currentTime);
-				
-				while(newTime > currentTime)
-				{
-//					if (!replayManager.playing)
-//						queueEvent(new NullEvent(currentTime, instanceID), true);
-					
-					currentTime++;
-					
-					// System.out.println("TIME: " + gameTimeline.getTime());
-					
-					synchronized (gameObjectMap)
-					{
-						for (MovingObject moveObject : movingObjects.values())
-						{
-							if (!(moveObject instanceof PlayerObject))
-							{
-								moveObject.doPhysics(instance);
-							}
-							else if (((PlayerObject) moveObject).isAlive())
-							{
-								((PlayerObject) moveObject).doPhysics(instance);
-							}
-						}
-					}
-				}
-			}
-		}
-		
-		private void endPlayback()
-		{
-			gameObjectMap = new ConcurrentHashMap<UUID, GameObject>(objectEnd);
-			
-			gameTimeline = mainTimeline;
-			
-			currentTime = endTime;
-			gameTimeline.resume();
-			
-			playing = false;
-		}
-		
-		private class ReplayEventHandler implements EventHandler
-		{
-			
-			@Override
-			public void handleEvent(GameEvent e)
-			{
-				if (record)
-				{
-					if(!(e instanceof InputEvent || e instanceof EndReplayEvent))
-					{
-						eventQueue.add(e);
-					}
-				}
-				
-				switch (e.getEventType())
-				{
-					case "InputEvent":
-					{
-						handle((InputEvent) e);
-						break;
-					}
-					case "EndReplayEvent":
-					{
-						handle((EndReplayEvent) e);
-						break;
-					}
-					default:
-						break;
-				}
-				
-			}
-			
-			private void handle(EndReplayEvent e)
-			{
-				endPlayback();
-			}
-
-			private void handle(InputEvent e)
-			{
-				//System.out.println(e.getInput());
-
-				switch(e.getInput())
-				{
-					case "START RECORDING":
-					{
-						startRecording();
-						break;
-					}
-					case "STOP RECORDING":
-					{
-						stopRecording();
-						break;
-					}
-					default:
-						eventQueue.add(e);
-						break;
-				}
-			}
-		}
-	}
 	
 	public static final int TARGET_FRAMERATE = 60;
 	
@@ -267,7 +48,6 @@ public abstract class GameInstance extends PApplet
 	ConcurrentHashMap<UUID, GameObject> gameObjectMap = new ConcurrentHashMap<UUID, GameObject>();
 	ConcurrentHashMap<UUID, PlayerObject> playerObjects = new ConcurrentHashMap<UUID, PlayerObject>();
 	ConcurrentHashMap<UUID, MovingObject> movingObjects = new ConcurrentHashMap<UUID, MovingObject>();
-	ConcurrentLinkedQueue<SpawnPoint> spawnPoints = new ConcurrentLinkedQueue<SpawnPoint>();
 	
 	GameObjectSet objectMap = new GameObjectSet();
 	
@@ -283,9 +63,6 @@ public abstract class GameInstance extends PApplet
 		if (object != null)
 		{
 			gameObjectMap.put(object.getID(), object);
-			
-			if (object instanceof SpawnPoint)
-				spawnPoints.add((SpawnPoint) object);
 				
 			if (object instanceof MovingObject)
 				movingObjects.put(object.getID(), (MovingObject) object);
@@ -302,9 +79,6 @@ public abstract class GameInstance extends PApplet
 		if (object != null)
 		{
 			gameObjectMap.remove(object.getID());
-			
-			if (object instanceof SpawnPoint)
-				spawnPoints.remove((SpawnPoint) object);
 				
 			if (object instanceof MovingObject)
 				movingObjects.remove(object.getID());
@@ -316,13 +90,18 @@ public abstract class GameInstance extends PApplet
 	
 	public PlayerObject createNewPlayer()
 	{
-		SpawnPoint spawn = spawnPoints.poll();
+		ArrayList<GameObject> spawns = objectMap.getObjectsOfClass(SpawnPoint.class);
+		
+		Random r = new Random();
+		
+		int index = r.nextInt(spawns.size());
+		
+		SpawnPoint spawn = (SpawnPoint) spawns.get(index);
 		PlayerObject newPlayer = null;
 		
 		if (spawn != null)
 		{
 			newPlayer = new PlayerObject(spawn);
-			spawnPoints.add(spawn);
 		}
 		else
 		{
@@ -347,23 +126,6 @@ public abstract class GameInstance extends PApplet
 		return result;
 	}
 	
-	public ConcurrentHashMap<UUID, GameObject> getPhysicalCollisions(double x,
-			double y)
-	{
-		ConcurrentHashMap<UUID, GameObject> result = new ConcurrentHashMap<UUID, GameObject>();
-		
-		for (Map.Entry<UUID, GameObject> entry : gameObjectMap.entrySet())
-		{
-			if (entry.getValue().contains(x, y)
-					&& entry.getValue().hasPhysicalCollision())
-			{
-				result.put(entry.getKey(), entry.getValue());
-			}
-		}
-		
-		return result;
-	}
-	
 	public ArrayList<GameObject> getPhysicalCollisions(double x, double y,
 			double w, double h)
 	{
@@ -375,22 +137,6 @@ public abstract class GameInstance extends PApplet
 					&& entry.getValue().hasPhysicalCollision())
 			{
 				result.add(entry.getValue());
-			}
-		}
-		
-		return result;
-	}
-	
-	public boolean checkForPhysicalCollision(double x, double y)
-	{
-		boolean result = false;
-		
-		for (Map.Entry<UUID, GameObject> entry : gameObjectMap.entrySet())
-		{
-			if (entry.getValue().contains(x, y)
-					&& entry.getValue().hasPhysicalCollision())
-			{
-				result = true;
 			}
 		}
 		
@@ -433,25 +179,242 @@ public abstract class GameInstance extends PApplet
 		// render the frame & gameObjects
 		background(204);
 		
-		if (replayManager != null)
-		{
-			if (replayManager.record)
-			{
-				fill(255, 0, 0);
-				noStroke();
-				this.ellipse(10, 10, 10, 10);
-			}
-		}
+//		if (replayManager != null)
+//		{
+//			if (replayManager.record)
+//			{
+//				fill(255, 0, 0);
+//				noStroke();
+//				this.ellipse(10, 10, 10, 10);
+//			}
+//		}
 		
 		for (GameObject o : objectMap.getObjectsOfClass(RenderableObject.class))
 		{
 			((RenderableObject) o).display(this);
+			//System.out.println(o);
 		}
 		
+		//System.out.println("-------------");
 	}
 	
 	public long getCurrentTime()
 	{
 		return currentTime;
 	}
+	
+//	public ReplayManager replayManager;
+//	
+//	public class ReplayManager
+//	{
+//		GameInstance instance;
+//		
+//		boolean record = false;
+//		
+//		public boolean playing = false;
+//		
+//		long startTime;
+//		long endTime;
+//		
+//		Timeline replayTimeline;
+//		Timeline mainTimeline;
+//		
+//		ConcurrentHashMap<UUID, GameObject> objectStart = new ConcurrentHashMap<UUID, GameObject>();
+//		ConcurrentHashMap<UUID, GameObject> objectEnd = new ConcurrentHashMap<UUID, GameObject>();
+//		
+//		PriorityBlockingQueue<GameEvent> eventQueue = new PriorityBlockingQueue<GameEvent>();
+//		
+//		public ReplayManager(GameInstance instance)
+//		{
+//			this.instance = instance;
+//			
+//			eventManager.registerHandler(new ReplayEventHandler(), new String[] {
+//					"NullEvent", "CollisionEvent", "InputEvent", "DeathEvent", "SpawnEvent" ,
+//					"EndReplayEvent" });
+//		}
+//		
+//		public void startRecording()
+//		{
+//			System.out.println("Starting a recording.");
+//			startTime = currentTime;
+//			objectStart.clear();
+//			synchronized (objectMapLock)
+//			{
+//				for (GameObject o : gameObjectMap.values())
+//				{
+//					
+//					
+//					objectStart.put(o.getID(), o.clone());
+//					//System.out.println(o.clone());
+//				}
+//			}
+//			eventQueue.clear();
+//			
+//			replayTimeline = new Timeline(startTime, 1000000000L / TARGET_FRAMERATE);
+//			replayTimeline.pause();
+//			
+//			record = true;
+//		}
+//		
+//		public void stopRecording()
+//		{
+//			System.out.println("Stopping recording.");
+//			objectEnd.clear();
+//			synchronized (objectMapLock)
+//			{
+//				for (GameObject o : gameObjectMap.values())
+//				{
+//					objectEnd.put(o.getID(), o.clone());
+//				}
+//			}
+//			endTime = currentTime;
+//			
+//			record = false;
+//			
+//			gameTimeline.resume();
+//			
+//			beginPlayback();
+//		}
+//		
+//		private void beginPlayback()
+//		{
+//			System.out.println("Beginning playback.");
+//			
+//			gameObjectMap = new ConcurrentHashMap<UUID, GameObject>(objectStart);
+//			
+//			
+//			
+//			gameTimeline.pause();
+//			mainTimeline = new Timeline(gameTimeline);
+//			
+//			System.out.println(startTime);
+//			
+//			while(!eventQueue.isEmpty())
+//			{
+//				GameEvent e = eventQueue.poll();
+//				System.out.println(e.getTimeStamp() + ": "+ e);
+//				queueEvent(e, false);
+//				
+//			}
+//			
+//			GameEvent f = new EndReplayEvent(endTime, 0, instanceID);
+//			System.out.println(f.getTimeStamp() + ": "+ f);
+//			queueEvent(f, false);
+//			
+//			replayTimeline.resume();
+//			currentTime = replayTimeline.getTime();
+//			
+//			//gameTimeline.resume();
+//			
+//			playing = true;
+//			
+//			while (playing)
+//			{
+//				long newTime = replayTimeline.getTime();
+//				
+//				//System.out.println("cur:" + currentTime);
+//				
+//				//System.out.println(newTime);
+//				
+//				eventManager.handleEvents(currentTime);
+//				
+//				while(newTime > currentTime)
+//				{
+////					if (!replayManager.playing)
+////						queueEvent(new NullEvent(currentTime, instanceID), true);
+//					
+//					currentTime++;
+//					
+//					// System.out.println("TIME: " + gameTimeline.getTime());
+//					
+//					synchronized (gameObjectMap)
+//					{
+//						for (MovingObject moveObject : movingObjects.values())
+//						{
+//							if (!(moveObject instanceof PlayerObject))
+//							{
+//								moveObject.doPhysics(instance);
+//							}
+//							else if (((PlayerObject) moveObject).isAlive())
+//							{
+//								((PlayerObject) moveObject).doPhysics(instance);
+//							}
+//						}
+//					}
+//				}
+//			}
+//		}
+//		
+//		private void endPlayback()
+//		{
+//			gameObjectMap = new ConcurrentHashMap<UUID, GameObject>(objectEnd);
+//			
+//			gameTimeline = mainTimeline;
+//			
+//			currentTime = endTime;
+//			gameTimeline.resume();
+//			
+//			playing = false;
+//		}
+//		
+//		private class ReplayEventHandler implements EventHandler
+//		{
+//			
+//			@Override
+//			public void handleEvent(GameEvent e)
+//			{
+//				if (record)
+//				{
+//					if(!(e instanceof InputEvent || e instanceof EndReplayEvent))
+//					{
+//						eventQueue.add(e);
+//					}
+//				}
+//				
+//				switch (e.getEventType())
+//				{
+//					case "InputEvent":
+//					{
+//						handle((InputEvent) e);
+//						break;
+//					}
+//					case "EndReplayEvent":
+//					{
+//						handle((EndReplayEvent) e);
+//						break;
+//					}
+//					default:
+//						break;
+//				}
+//				
+//			}
+//			
+//			private void handle(EndReplayEvent e)
+//			{
+//				endPlayback();
+//			}
+//
+//			private void handle(InputEvent e)
+//			{
+//				//System.out.println(e.getInput());
+//
+//				switch(e.getInput())
+//				{
+//					case "START RECORDING":
+//					{
+//						startRecording();
+//						break;
+//					}
+//					case "STOP RECORDING":
+//					{
+//						stopRecording();
+//						break;
+//					}
+//					default:
+//						eventQueue.add(e);
+//						break;
+//				}
+//			}
+//		}
+//	}
 }

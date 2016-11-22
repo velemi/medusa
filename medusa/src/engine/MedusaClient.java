@@ -16,7 +16,6 @@ import engine.gameEvents.InputEvent;
 import engine.gameEvents.NullEvent;
 import engine.gameEvents.SpawnEvent;
 import engine.gameEvents.eventManagement.EventHandler;
-import engine.gameEvents.eventManagement.EventManager;
 import engine.gameObjects.DeathZone;
 import engine.gameObjects.GameObject;
 import engine.gameObjects.PlayerObject;
@@ -85,13 +84,13 @@ public class MedusaClient extends GameInstance
 			objects[1] = gameObjectMap.get(e.getIDs()[1]);
 			
 			if ((objects[0] instanceof PlayerObject)
-					&& (objects[1] instanceof DeathZone) && !replayManager.playing)
+					&& (objects[1] instanceof DeathZone) /*&& !replayManager.playing*/)
 			{
 				queueEvent(new DeathEvent(e, e.getTimeStamp()
 						+ 1, getInstanceID(), objects[0].getID()), false);
 			}
 			else if ((objects[1] instanceof PlayerObject)
-					&& (objects[0] instanceof DeathZone) && !replayManager.playing)
+					&& (objects[0] instanceof DeathZone) /*&& !replayManager.playing*/)
 			{
 				queueEvent(new DeathEvent(e, e.getTimeStamp()
 						+ 1, getInstanceID(), objects[1].getID()), false);
@@ -157,7 +156,7 @@ public class MedusaClient extends GameInstance
 				((Killable) object).kill();
 				removeFromMap(object);
 				
-				if (object instanceof PlayerObject && !replayManager.playing)
+				if (object instanceof PlayerObject /*&& !replayManager.playing*/)
 					queueEvent(new SpawnEvent(e, e.getTimeStamp()
 							+ PlayerObject.DEFAULT_RESPAWN, getInstanceID(), object), false);
 			}
