@@ -1,7 +1,6 @@
 package engine;
 
 import java.util.ArrayList;
-import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -111,53 +110,21 @@ public abstract class GameInstance extends PApplet
 		return newPlayer;
 	}
 	
-	public ConcurrentHashMap<UUID, GameObject> getTouching(GameObject theObject)
+	public ArrayList<GameObject> getColliding(GameObject o)
 	{
-		ConcurrentHashMap<UUID, GameObject> result = new ConcurrentHashMap<UUID, GameObject>();
-		
-		for (Map.Entry<UUID, GameObject> entry : gameObjectMap.entrySet())
-		{
-			if (entry.getValue().intersects(theObject))
-			{
-				result.put(entry.getKey(), entry.getValue().clone());
-			}
-		}
-		
-		return result;
+		return objectMap.getColliding(o, false);
 	}
 	
 	public ArrayList<GameObject> getPhysicalCollisions(double x, double y,
 			double w, double h)
 	{
-		ArrayList<GameObject> result = new ArrayList<GameObject>();
-		
-		for (Map.Entry<UUID, GameObject> entry : gameObjectMap.entrySet())
-		{
-			if (entry.getValue().intersects(x, y, w, h)
-					&& entry.getValue().hasPhysicalCollision())
-			{
-				result.add(entry.getValue());
-			}
-		}
-		
-		return result;
+		return objectMap.getColliding(x, y, w, h, true);
 	}
 	
 	public boolean checkForPhysicalCollision(double x, double y, double w,
 			double h)
 	{
-		boolean result = false;
-		
-		for (Map.Entry<UUID, GameObject> entry : gameObjectMap.entrySet())
-		{
-			if (entry.getValue().intersects(x, y, w, h)
-					&& entry.getValue().hasPhysicalCollision())
-			{
-				result = true;
-			}
-		}
-		
-		return result;
+		return objectMap.checkPhysCollision(x, y, w, h);
 	}
 	
 	/*

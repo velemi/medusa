@@ -2,7 +2,6 @@ package engine.gameObjects;
 
 import java.util.ArrayList;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 import engine.GameInstance;
 import engine.gameEvents.CollisionEvent;
 import engine.gameObjects.objectClasses.Killable;
@@ -273,18 +272,11 @@ public class PlayerObject
 	
 	private synchronized void handleNonPhysicalCollisions(GameInstance parent)
 	{
-//		if (parent.replayManager != null)
-//		{
-//			if (!parent.replayManager.playing)
-//			{
-				ConcurrentHashMap<UUID, GameObject> collisions = parent.getTouching(this);
-				for (UUID entry : collisions.keySet())
-				{
-					parent.queueEvent(new CollisionEvent(parent.getCurrentTime()
-							+ 1, parentInstanceID, this.getID(), entry), false);
-				}
-//			} 
-//		}
+		for (GameObject e : parent.getColliding(this))
+		{
+			parent.queueEvent(new CollisionEvent(parent.getCurrentTime() + 1,
+							parentInstanceID, this.getID(), e.getID()), false);
+		}
 	}
 	
 	/** Updates this PlayerObject's position based on its current state. */
@@ -357,6 +349,10 @@ public class PlayerObject
 			x = 0;
 			y = 0;
 		}
+		
+		leftPressed = false;
+		rightPressed = false;
+		jumpPressed = false;
 		
 		hSpeed = 0;
 		vSpeed = 0;

@@ -2,6 +2,7 @@ package engine.gameObjects;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import engine.gameObjects.objectClasses.RenderableObject;
@@ -113,15 +114,20 @@ public class GameObjectSet
 		return objects;
 	}
 	
-	public ArrayList<GameObject> getColliding(GameObject o, boolean physicalOnly)
+	public ArrayList<GameObject> getColliding(GameObject o, boolean physOnly)
+	{	
+		return getColliding(o.x, o.y, o.width, o.height, physOnly);
+	}
+	
+	public ArrayList<GameObject> getColliding(double x, double y, double w, double h, boolean physOnly)
 	{
 		lock.readLock().lock();
 		
 		ArrayList<GameObject> c = new ArrayList<GameObject>();
 		
-		for(GameObject e : objectMap.values())
+		for (GameObject e : objectMap.values())
 		{
-			if (e.intersects(o) && (!physicalOnly || e.hasPhysicalCollision()))
+			if (e.intersects(x, y, w, h) && (!physOnly || e.hasPhysicalCollision()))
 			{
 				c.add(e);
 			}
@@ -130,5 +136,22 @@ public class GameObjectSet
 		lock.readLock().unlock();
 		
 		return c;
+	}
+	
+	public boolean checkPhysCollision(double x, double y, double w, double h)
+	{
+		lock.readLock().lock();
+		
+		boolean result = false;
+		
+		for (GameObject e : objectMap.values())
+		{
+			if (e.intersects(x, y, w, h) && e.hasPhysicalCollision())
+				result = true;
+		}
+		
+		lock.readLock().unlock();
+		
+		return result;
 	}
 }
