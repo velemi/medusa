@@ -6,17 +6,13 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.PriorityBlockingQueue;
-import engine.gameEvents.CollisionEvent;
-import engine.gameEvents.DeathEvent;
 import engine.gameEvents.EndReplayEvent;
 import engine.gameEvents.GameEvent;
 import engine.gameEvents.InputEvent;
-import engine.gameEvents.NullEvent;
-import engine.gameEvents.SpawnEvent;
 import engine.gameEvents.eventManagement.EventHandler;
 import engine.gameEvents.eventManagement.EventManager;
 import engine.gameObjects.GameObject;
-import engine.gameObjects.HorizontalMovingBlock;
+import engine.gameObjects.GameObjectSet;
 import engine.gameObjects.PlayerObject;
 import engine.gameObjects.SpawnPoint;
 import engine.gameObjects.objectClasses.MovingObject;
@@ -273,6 +269,8 @@ public abstract class GameInstance extends PApplet
 	ConcurrentHashMap<UUID, MovingObject> movingObjects = new ConcurrentHashMap<UUID, MovingObject>();
 	ConcurrentLinkedQueue<SpawnPoint> spawnPoints = new ConcurrentLinkedQueue<SpawnPoint>();
 	
+	GameObjectSet objectMap = new GameObjectSet();
+	
 	public UUID getInstanceID()
 	{
 		return this.instanceID;
@@ -280,6 +278,8 @@ public abstract class GameInstance extends PApplet
 	
 	public void addToMap(GameObject object)
 	{
+		objectMap.addToSet(object);
+		
 		if (object != null)
 		{
 			gameObjectMap.put(object.getID(), object);
@@ -297,6 +297,8 @@ public abstract class GameInstance extends PApplet
 	
 	public void removeFromMap(GameObject object)
 	{
+		objectMap.removeFromSet(object);
+		
 		if (object != null)
 		{
 			gameObjectMap.remove(object.getID());
@@ -438,16 +440,13 @@ public abstract class GameInstance extends PApplet
 				fill(255, 0, 0);
 				noStroke();
 				this.ellipse(10, 10, 10, 10);
-			} 
-		}
-			for (GameObject o : gameObjectMap.values())
-			{
-				
-				if (o instanceof RenderableObject)
-				{
-					((RenderableObject) o).display(this);
-				}
 			}
+		}
+		
+		for (GameObject o : objectMap.getObjectsOfClass(RenderableObject.class))
+		{
+			((RenderableObject) o).display(this);
+		}
 		
 	}
 	

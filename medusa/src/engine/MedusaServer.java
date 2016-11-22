@@ -45,7 +45,6 @@ public class MedusaServer extends GameInstance
 	private Object queueLock = new Object();
 	
 	
-	
 	private class ServerEventHandler implements EventHandler
 	{
 		@Override

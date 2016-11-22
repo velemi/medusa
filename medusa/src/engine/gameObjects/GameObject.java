@@ -34,6 +34,14 @@ public class GameObject
 		this.y = sY;
 	}
 	
+	public boolean isType(Class<?> t)
+	{
+		if(t.isInstance(this))
+			return true;
+		
+		return false;
+	}
+	
 	public synchronized void becomeCopyOf(GameObject other)
 	{
 		this.x = other.x;
