@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.UUID;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import engine.gameObjects.objectClasses.RenderableObject;
 
 public class GameObjectSet
 {
@@ -13,8 +12,8 @@ public class GameObjectSet
 	private HashMap<UUID, GameObject> objectMap = new HashMap<UUID, GameObject>();
 	private HashMap<UUID, PlayerObject> playerObjects = new HashMap<UUID, PlayerObject>();
 	
-	private ArrayList<GameObject> renderables = new ArrayList<GameObject>();
-	private ArrayList<GameObject> spawnPoints = new ArrayList<GameObject>();
+//	private ArrayList<GameObject> renderables = new ArrayList<GameObject>();
+//	private ArrayList<GameObject> spawnPoints = new ArrayList<GameObject>();
 	
 	public GameObjectSet()
 	{
@@ -36,10 +35,10 @@ public class GameObjectSet
 			
 			if (o instanceof PlayerObject)
 				playerObjects.put(((PlayerObject) o).parentInstanceID, (PlayerObject) o);
-			if (o instanceof RenderableObject)
-				renderables.add(o);
-			if (o instanceof SpawnPoint)
-				spawnPoints.add(o);
+//			if (o instanceof RenderableObject && !renderables.)
+//				renderables.add(o);
+//			if (o instanceof SpawnPoint)
+//				spawnPoints.add(o);
 		}
 		
 		lock.writeLock().unlock();
@@ -55,10 +54,10 @@ public class GameObjectSet
 			
 			if (o instanceof PlayerObject)
 				playerObjects.remove(((PlayerObject) o).parentInstanceID);
-			if (o instanceof RenderableObject)
-				renderables.remove((RenderableObject) o);
-			if (o instanceof SpawnPoint)
-				spawnPoints.remove(o);
+//			if (o instanceof RenderableObject)
+//				renderables.remove((RenderableObject) o);
+//			if (o instanceof SpawnPoint)
+//				spawnPoints.remove(o);
 		}
 		
 		lock.writeLock().unlock();
@@ -98,28 +97,18 @@ public class GameObjectSet
 		return r;
 	}
 	
-	@SuppressWarnings("unchecked")
 	public ArrayList<GameObject> getObjectsOfClass(Class<?> t)
 	{
 		lock.readLock().lock();
 		
-		ArrayList<GameObject> objects;
+		ArrayList<GameObject> objects = new ArrayList<GameObject>();
 		
-		if (t.equals(RenderableObject.class))
-			objects = (ArrayList<GameObject>) this.renderables.clone();
-		else if (t.equals(SpawnPoint.class))
-			objects = (ArrayList<GameObject>) this.spawnPoints.clone();
-		else 
+		for (GameObject o : objectMap.values())
 		{
-			objects = new ArrayList<GameObject>();
-			
-			for (GameObject o : objectMap.values())
-			{
-				if (o.isType(t))
-					objects.add(o);
-			}
+			if (o.isType(t))
+				objects.add(o);
 		}
-			
+
 		lock.readLock().unlock();
 		
 		return objects;

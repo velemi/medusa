@@ -23,8 +23,6 @@ public abstract class GameInstance extends PApplet
 {
 	public static final boolean DEBUG = true;
 	
-	protected UUID instanceID;
-	
 	public static final int TARGET_FRAMERATE = 60;
 	
 	public static final int SCREEN_WIDTH = 800, SCREEN_HEIGHT = 800;
@@ -32,19 +30,17 @@ public abstract class GameInstance extends PApplet
 	/** The port number to be used by the server */
 	public static final int SERVER_PORT = 7734;
 	
-	public EventManager eventManager = new EventManager();
-	
-	public abstract void queueEvent(GameEvent e, boolean propagate);
+	protected UUID instanceID;
 	
 	long currentTime;
 	
 	Timeline gameTimeline;
 	
-//	ConcurrentHashMap<UUID, GameObject> gameObjectMap = new ConcurrentHashMap<UUID, GameObject>();
-//	ConcurrentHashMap<UUID, PlayerObject> playerObjects = new ConcurrentHashMap<UUID, PlayerObject>();
-//	ConcurrentHashMap<UUID, MovingObject> movingObjects = new ConcurrentHashMap<UUID, MovingObject>();
+	public EventManager eventManager = new EventManager();
 	
 	GameObjectSet objectMap = new GameObjectSet();
+	
+	public abstract void queueEvent(GameEvent e, boolean propagate);
 	
 	public UUID getInstanceID()
 	{
