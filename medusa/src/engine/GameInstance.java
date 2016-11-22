@@ -3,14 +3,12 @@ package engine;
 import java.util.ArrayList;
 import java.util.Random;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 import engine.gameEvents.GameEvent;
 import engine.gameEvents.eventManagement.EventManager;
 import engine.gameObjects.GameObject;
 import engine.gameObjects.GameObjectSet;
 import engine.gameObjects.PlayerObject;
 import engine.gameObjects.SpawnPoint;
-import engine.gameObjects.objectClasses.MovingObject;
 import engine.gameObjects.objectClasses.RenderableObject;
 import engine.time.Timeline;
 import processing.core.PApplet;
@@ -24,8 +22,6 @@ import processing.core.PApplet;
 public abstract class GameInstance extends PApplet
 {
 	public static final boolean DEBUG = true;
-	
-	//Object objectMapLock = new Object();
 	
 	protected UUID instanceID;
 	
@@ -44,9 +40,9 @@ public abstract class GameInstance extends PApplet
 	
 	Timeline gameTimeline;
 	
-	ConcurrentHashMap<UUID, GameObject> gameObjectMap = new ConcurrentHashMap<UUID, GameObject>();
-	ConcurrentHashMap<UUID, PlayerObject> playerObjects = new ConcurrentHashMap<UUID, PlayerObject>();
-	ConcurrentHashMap<UUID, MovingObject> movingObjects = new ConcurrentHashMap<UUID, MovingObject>();
+//	ConcurrentHashMap<UUID, GameObject> gameObjectMap = new ConcurrentHashMap<UUID, GameObject>();
+//	ConcurrentHashMap<UUID, PlayerObject> playerObjects = new ConcurrentHashMap<UUID, PlayerObject>();
+//	ConcurrentHashMap<UUID, MovingObject> movingObjects = new ConcurrentHashMap<UUID, MovingObject>();
 	
 	GameObjectSet objectMap = new GameObjectSet();
 	
@@ -58,33 +54,11 @@ public abstract class GameInstance extends PApplet
 	public void addToMap(GameObject object)
 	{
 		objectMap.addToSet(object);
-		
-		if (object != null)
-		{
-			gameObjectMap.put(object.getID(), object);
-				
-			if (object instanceof MovingObject)
-				movingObjects.put(object.getID(), (MovingObject) object);
-				
-			if (object instanceof PlayerObject)
-				playerObjects.put(((PlayerObject) object).getParentInstanceID(), (PlayerObject) object);
-		}
 	}
 	
 	public void removeFromMap(GameObject object)
 	{
 		objectMap.removeFromSet(object);
-		
-		if (object != null)
-		{
-			gameObjectMap.remove(object.getID());
-				
-			if (object instanceof MovingObject)
-				movingObjects.remove(object.getID());
-				
-			if (object instanceof PlayerObject)
-				playerObjects.remove(((PlayerObject) object).getParentInstanceID());
-		}
 	}
 	
 	public PlayerObject createNewPlayer()
@@ -146,23 +120,10 @@ public abstract class GameInstance extends PApplet
 		// render the frame & gameObjects
 		background(204);
 		
-//		if (replayManager != null)
-//		{
-//			if (replayManager.record)
-//			{
-//				fill(255, 0, 0);
-//				noStroke();
-//				this.ellipse(10, 10, 10, 10);
-//			}
-//		}
-		
 		for (GameObject o : objectMap.getObjectsOfClass(RenderableObject.class))
 		{
 			((RenderableObject) o).display(this);
-			//System.out.println(o);
 		}
-		
-		//System.out.println("-------------");
 	}
 	
 	public long getCurrentTime()

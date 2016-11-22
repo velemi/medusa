@@ -5,9 +5,9 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.util.HashMap;
 import java.util.Scanner;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.PriorityBlockingQueue;
 import engine.gameEvents.CollisionEvent;
 import engine.gameEvents.DeathEvent;
@@ -80,8 +80,8 @@ public class MedusaClient extends GameInstance
 		{
 			GameObject[] objects = new GameObject[2];
 			
-			objects[0] = gameObjectMap.get(e.getIDs()[0]);
-			objects[1] = gameObjectMap.get(e.getIDs()[1]);
+			objects[0] = objectMap.getObject(e.getIDs()[0]);
+			objects[1] = objectMap.getObject(e.getIDs()[1]);
 			
 			if ((objects[0] instanceof PlayerObject)
 					&& (objects[1] instanceof DeathZone) /*&& !replayManager.playing*/)
@@ -99,7 +99,7 @@ public class MedusaClient extends GameInstance
 		
 		private void handle(InputEvent e)
 		{
-			PlayerObject p = playerObjects.get(e.getInstanceID());
+			PlayerObject p = objectMap.getPlayerObject(e.getInstanceID());
 			
 			if (p != null)
 			{
@@ -149,7 +149,7 @@ public class MedusaClient extends GameInstance
 		
 		private void handle(DeathEvent e)
 		{
-			GameObject object = gameObjectMap.get(e.getObjectID());
+			GameObject object = objectMap.getObject(e.getObjectID());
 			
 			if (object instanceof Killable)
 			{
@@ -170,7 +170,7 @@ public class MedusaClient extends GameInstance
 			{
 				((Spawnable) object).spawn();
 				
-				if (!gameObjectMap.contains(object))
+				if (!objectMap.contains(object))
 				{
 					addToMap(object);
 				}
@@ -220,20 +220,20 @@ public class MedusaClient extends GameInstance
 					//System.out.println("TIME: " + gameTimeline.getTime());
 					eventManager.handleEvents(currentTime);
 					
-					synchronized (gameObjectMap)
-					{
-						for (MovingObject moveObject : movingObjects.values())
+//					synchronized (gameObjectMap)
+//					{
+						for (GameObject moveObject : objectMap.getObjectsOfClass(MovingObject.class))
 						{
 							if (!(moveObject instanceof PlayerObject))
 							{
-								moveObject.doPhysics(gameInstance);
+								((MovingObject) moveObject).doPhysics(gameInstance);
 							}
 							else if (((PlayerObject) moveObject).isAlive())
 							{
 								((PlayerObject) moveObject).doPhysics(gameInstance);
 							}
 						}
-					}
+//					}
 				}
 			}
 		}
@@ -278,7 +278,7 @@ public class MedusaClient extends GameInstance
 						
 						eventManager.removeQueue(disconnectedClient);
 						
-						removeFromMap(playerObjects.get(disconnectedClient));
+						removeFromMap(objectMap.getPlayerObject(disconnectedClient));
 						
 						break;
 					}
@@ -375,7 +375,7 @@ public class MedusaClient extends GameInstance
 //					queueEvent(new NullEvent(eventManager.getGVT() + 1, instanceID), false);
 //				}
 				
-				ConcurrentHashMap<UUID, GameObject> g = (ConcurrentHashMap<UUID, GameObject>) networkInput.readObject();
+				HashMap<UUID, GameObject> g = (HashMap<UUID, GameObject>) networkInput.readObject();
 				
 				for (GameObject o : g.values())
 				{

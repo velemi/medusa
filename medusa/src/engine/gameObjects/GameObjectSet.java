@@ -2,7 +2,6 @@ package engine.gameObjects;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import engine.gameObjects.objectClasses.RenderableObject;
@@ -65,6 +64,18 @@ public class GameObjectSet
 		lock.writeLock().unlock();
 	}
 	
+	public HashMap<UUID, GameObject> getFullMap()
+	{
+		lock.readLock().lock();
+		
+		@SuppressWarnings("unchecked")
+		HashMap<UUID, GameObject> o = (HashMap<UUID, GameObject>) objectMap.clone();
+		
+		lock.readLock().unlock();
+		
+		return o;
+	}
+	
 	public GameObject getObject(UUID objectID)
 	{
 		lock.readLock().lock();
@@ -112,6 +123,19 @@ public class GameObjectSet
 		lock.readLock().unlock();
 		
 		return objects;
+	}
+	
+	public boolean contains(GameObject o)
+	{
+		boolean r = false;
+		
+		lock.readLock().lock();
+		
+		r = objectMap.containsValue(o);
+		
+		lock.readLock().unlock();
+		
+		return r;
 	}
 	
 	public ArrayList<GameObject> getColliding(GameObject o, boolean physOnly)

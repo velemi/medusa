@@ -81,8 +81,8 @@ public class MedusaServer extends GameInstance
 		{
 			GameObject[] objects = new GameObject[2];
 			
-			objects[0] = gameObjectMap.get(e.getIDs()[0]);
-			objects[1] = gameObjectMap.get(e.getIDs()[1]);
+			objects[0] = objectMap.getObject(e.getIDs()[0]);
+			objects[1] = objectMap.getObject(e.getIDs()[1]);
 			
 			if ((objects[0] instanceof PlayerObject)
 					&& (objects[1] instanceof DeathZone)/*&& !replayManager.playing*/)
@@ -100,7 +100,7 @@ public class MedusaServer extends GameInstance
 		
 		private void handle(InputEvent e)
 		{
-			PlayerObject p = playerObjects.get(e.getInstanceID());
+			PlayerObject p = objectMap.getPlayerObject(e.getInstanceID());
 			
 			if (p != null)
 			{
@@ -150,7 +150,7 @@ public class MedusaServer extends GameInstance
 		
 		private void handle(DeathEvent e)
 		{
-			GameObject object = gameObjectMap.get(e.getObjectID());
+			GameObject object = objectMap.getObject(e.getObjectID());
 			
 			if (object instanceof Killable)
 			{
@@ -171,7 +171,7 @@ public class MedusaServer extends GameInstance
 			{
 				((Spawnable) object).spawn();
 				
-				if (!gameObjectMap.contains(object))
+				if (!objectMap.contains(object))
 				{
 					addToMap(object);
 				}
@@ -239,20 +239,20 @@ public class MedusaServer extends GameInstance
 					
 					//System.out.println("TIME: " + gameTimeline.getTime());
 					
-					synchronized (gameObjectMap)
+//					synchronized (gameObjectMap)
+//					{
+					for (GameObject moveObject : objectMap.getObjectsOfClass(MovingObject.class))
 					{
-						for (MovingObject moveObject : movingObjects.values())
+						if (!(moveObject instanceof PlayerObject))
 						{
-							if (!(moveObject instanceof PlayerObject))
-							{
-								moveObject.doPhysics(gameInstance);
-							}
-							else if (((PlayerObject) moveObject).isAlive())
-							{
-								((PlayerObject) moveObject).doPhysics(gameInstance);
-							}
+							((MovingObject) moveObject).doPhysics(gameInstance);
+						}
+						else if (((PlayerObject) moveObject).isAlive())
+						{
+							((PlayerObject) moveObject).doPhysics(gameInstance);
 						}
 					}
+//					}
 				}
 			}
 		}
@@ -388,7 +388,7 @@ public class MedusaServer extends GameInstance
 						
 						eventManager.removeQueue(disconnectedClient);
 						
-						removeFromMap(playerObjects.get(disconnectedClient));
+						removeFromMap(objectMap.getPlayerObject(disconnectedClient));
 						
 						for (ClientHandler client : clientList)
 						{
@@ -470,7 +470,7 @@ public class MedusaServer extends GameInstance
 				playerObject.setParentInstanceID(clientInstanceID);
 				networkOutput.writeObject(playerObject);
 				
-				networkOutput.writeObject(gameObjectMap);
+				networkOutput.writeObject(objectMap.getFullMap());
 				addToMap(playerObject);
 				
 				for (ClientHandler client : clientList)
@@ -493,38 +493,34 @@ public class MedusaServer extends GameInstance
 	/** Performs initial setup of GameObjects for this server */
 	private void setUpGameObjects()
 	{
-		synchronized (gameObjectMap)
+		// blocks
+		addToMap(new Block(50, 100));
+		addToMap(new Block(200, 100));
+		addToMap(new Block(264, 187));
+		for (int i = 1; i < 11; i++)
 		{
-			
-			// blocks
-			addToMap(new Block(50, 100));
-			addToMap(new Block(200, 100));
-			addToMap(new Block(264, 187));
-			for (int i = 1; i < 11; i++)
-			{
-				addToMap(new Block(i * 50, 300));
-			}
-			addToMap(new Block(50, 245));
-			addToMap(new Block(500, 245));
-			
-			// deathZones
-			for (int i = -2; i < 9; i++)
-			{
-				addToMap(new DeathZone(100 * i, 900));
-				addToMap(new DeathZone(100 * i, -200));
-				addToMap(new DeathZone(-200, i * 100));
-				addToMap(new DeathZone(900, i * 100));
-			}
-			
-			// spawnPoints
-			addToMap(new SpawnPoint(204, 55));
-			addToMap(new SpawnPoint(52, 40));
-			addToMap(new SpawnPoint(260, 130));
-			
-			// moving platform
-			addToMap(new HorizontalMovingBlock(400, 500));
-			addToMap(new HorizontalMovingBlock(320, 187));
+			addToMap(new Block(i * 50, 300));
 		}
+		addToMap(new Block(50, 245));
+		addToMap(new Block(500, 245));
+		
+		// deathZones
+		for (int i = -2; i < 9; i++)
+		{
+			addToMap(new DeathZone(100 * i, 900));
+			addToMap(new DeathZone(100 * i, -200));
+			addToMap(new DeathZone(-200, i * 100));
+			addToMap(new DeathZone(900, i * 100));
+		}
+		
+		// spawnPoints
+		addToMap(new SpawnPoint(204, 55));
+		addToMap(new SpawnPoint(52, 40));
+		addToMap(new SpawnPoint(260, 130));
+		
+		// moving platform
+		addToMap(new HorizontalMovingBlock(400, 500));
+		addToMap(new HorizontalMovingBlock(320, 187));
 	}
 	
 	@Override
