@@ -1,9 +1,9 @@
 package engine.gameObjects;
 
 import engine.GameInstance;
-import engine.gameObjects.objectClasses.MovingObject;
+import engine.gameObjects.objectClasses.PhysicsObject;
 
-public class HorizontalMovingBlock extends Block implements MovingObject
+public class HorizontalMovingBlock extends Block implements PhysicsObject
 {
 	private static final long serialVersionUID = 693212084271323344L;
 	

@@ -36,10 +36,7 @@ public class GameObject
 	
 	public boolean isType(Class<?> t)
 	{
-		if(t.isInstance(this))
-			return true;
-		
-		return false;
+		return t.isInstance(this);
 	}
 	
 	public synchronized GameObject clone()

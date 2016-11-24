@@ -40,6 +40,11 @@ public abstract class NetworkHandler
 	{
 		NetworkMessage outgoingMessage;
 		
+		public NetworkOutputThread()
+		{
+			this.setName("Network Output Thread");
+		}
+		
 		public void run()
 		{
 			while(connected)
@@ -98,6 +103,11 @@ public abstract class NetworkHandler
 	public abstract class NetworkInputThread extends Thread
 	{
 		protected NetworkMessage incomingMessage;
+		
+		public NetworkInputThread()
+		{
+			this.setName("Network Input Thread");
+		}
 		
 		public void run()
 		{

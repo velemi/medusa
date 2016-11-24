@@ -2,7 +2,7 @@ package engine.gameObjects.objectClasses;
 
 import engine.GameInstance;
 
-public interface MovingObject
+public interface PhysicsObject
 {
 	public void doPhysics(GameInstance parent);
 }

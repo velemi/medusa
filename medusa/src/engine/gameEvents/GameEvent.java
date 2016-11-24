@@ -58,6 +58,11 @@ public abstract class GameEvent implements Serializable, Comparable<GameEvent>
 		}
 	}
 	
+	public boolean isType(Class<?> t)
+	{
+		return t.isInstance(this);
+	}
+	
 	public String getEventType()
 	{
 		return this.getClass().getSimpleName();

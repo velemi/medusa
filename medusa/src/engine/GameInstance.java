@@ -253,7 +253,7 @@ public abstract class GameInstance extends PApplet
 //					
 //					synchronized (gameObjectMap)
 //					{
-//						for (MovingObject moveObject : movingObjects.values())
+//						for (PhysicsObject moveObject : movingObjects.values())
 //						{
 //							if (!(moveObject instanceof PlayerObject))
 //							{

@@ -8,6 +8,7 @@ import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.Scanner;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.PriorityBlockingQueue;
 import engine.gameEvents.CollisionEvent;
 import engine.gameEvents.DeathEvent;
@@ -16,11 +17,12 @@ import engine.gameEvents.InputEvent;
 import engine.gameEvents.NullEvent;
 import engine.gameEvents.SpawnEvent;
 import engine.gameEvents.eventManagement.EventHandler;
+import engine.gameEvents.eventManagement.EventQueue;
 import engine.gameObjects.DeathZone;
 import engine.gameObjects.GameObject;
 import engine.gameObjects.PlayerObject;
 import engine.gameObjects.objectClasses.Killable;
-import engine.gameObjects.objectClasses.MovingObject;
+import engine.gameObjects.objectClasses.PhysicsObject;
 import engine.gameObjects.objectClasses.Spawnable;
 import engine.network.NetworkHandler;
 import engine.network.messages.ClientDisconnectMessage;
@@ -202,38 +204,37 @@ public class MedusaClient extends GameInstance
 		
 		public ClientLogicThread(GameInstance instance)
 		{
+			this.setName("Client Logic Thread");
 			this.gameInstance = instance;
 		}
 		
 		public void run()
 		{
-			currentTime = gameTimeline.getTime();
+			//currentTime = gameTimeline.getTime();
 			while(true)
 			{
 				long newTime = gameTimeline.getTime();
 				
 				while(newTime > currentTime)
 				{
-					queueEvent(new NullEvent(currentTime, instanceID), true);
-					currentTime++;
+					NullEvent n = new NullEvent(currentTime, instanceID);
+					queueEvent(n, true);
 					
-					//System.out.println("TIME: " + gameTimeline.getTime());
 					eventManager.handleEvents(currentTime);
 					
-//					synchronized (gameObjectMap)
-//					{
-						for (GameObject moveObject : objectMap.getObjectsOfClass(MovingObject.class))
+					currentTime++;
+					
+					for (GameObject moveObject : objectMap.getObjectsOfClass(PhysicsObject.class))
+					{
+						if (!(moveObject instanceof PlayerObject))
 						{
-							if (!(moveObject instanceof PlayerObject))
-							{
-								((MovingObject) moveObject).doPhysics(gameInstance);
-							}
-							else if (((PlayerObject) moveObject).isAlive())
-							{
-								((PlayerObject) moveObject).doPhysics(gameInstance);
-							}
+							((PhysicsObject) moveObject).doPhysics(gameInstance);
 						}
-//					}
+						else if (((PlayerObject) moveObject).isAlive())
+						{
+							((PlayerObject) moveObject).doPhysics(gameInstance);
+						}
+					}
 				}
 			}
 		}
@@ -345,44 +346,62 @@ public class MedusaClient extends GameInstance
 			}
 		}
 		
-		@SuppressWarnings("unchecked")
+		private void initTimeline() throws IOException
+		{
+			gameTimeline = new Timeline(networkInput.readLong(), 1000000000L
+					/ TARGET_FRAMERATE);
+		}
+		
+		private void initObjects() throws ClassNotFoundException, IOException
+		{
+			playerObject = (PlayerObject) networkInput.readObject();
+			instanceID = playerObject.getParentInstanceID();
+			
+			@SuppressWarnings("unchecked")
+			HashMap<UUID, GameObject> g = (HashMap<UUID, GameObject>) networkInput.readObject();
+			
+			for (GameObject o : g.values())
+			{
+				addToMap(o);
+			}
+			
+			addToMap(playerObject);
+		}
+		
+		private void initEvents() throws IOException, ClassNotFoundException
+		{
+			@SuppressWarnings("unchecked")
+			ConcurrentHashMap<UUID, EventQueue> queues = 
+					(ConcurrentHashMap<UUID, EventQueue>) networkInput.readObject();
+			
+			long serverGVT = networkInput.readLong();
+			
+			for (EventQueue q : queues.values())
+			{
+				eventManager.addQueue(q.getInstanceID());
+				
+				while (!q.isEmpty())
+				{
+					eventManager.queueEvent(q.poll());
+				}
+			}
+			
+			eventManager.registerHandler(new ClientEventHandler(), new String[ ] {
+					"CollisionEvent", "InputEvent", "DeathEvent", "SpawnEvent" });
+			
+			eventManager.setGVT(serverGVT);
+			currentTime = serverGVT;
+		}
+		
 		protected void initDataTransactions()
 		{
 			try
 			{
-				PriorityBlockingQueue<GameEvent> events = (PriorityBlockingQueue<GameEvent>) networkInput.readObject();
-				
-				// long serverGVT = networkInput.readLong();
-				
-				gameTimeline = new Timeline(networkInput.readLong(), 1000000000L
-						/ TARGET_FRAMERATE);
+				initTimeline();
 						
-				playerObject = (PlayerObject) networkInput.readObject();
-				instanceID = playerObject.getParentInstanceID();
+				initObjects();
 				
-				for (GameEvent e : events)
-				{
-					queueEvent(e, false);
-					// eventManager.queueEvent(new NullEvent(e.getTimeStamp(),
-					// instanceID));
-				}
-				
-				eventManager.registerHandler(new ClientEventHandler(), new String[ ] {
-						"CollisionEvent", "InputEvent", "DeathEvent", "SpawnEvent" });
-				
-//				while (eventManager.getGVT() < serverGVT)
-//				{
-//					queueEvent(new NullEvent(eventManager.getGVT() + 1, instanceID), false);
-//				}
-				
-				HashMap<UUID, GameObject> g = (HashMap<UUID, GameObject>) networkInput.readObject();
-				
-				for (GameObject o : g.values())
-				{
-					addToMap(o);
-				}
-				
-				addToMap(playerObject);
+				initEvents();
 			}
 			catch (ClassNotFoundException e)
 			{
