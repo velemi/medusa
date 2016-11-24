@@ -242,6 +242,7 @@ public class EventManager
 				else if (q.getFirstTimestamp() < gvt)
 				{
 					readyQueue.add(q.poll());
+					nullsReceived = false;
 				}
 				
 			}

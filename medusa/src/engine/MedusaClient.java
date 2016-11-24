@@ -9,7 +9,6 @@ import java.util.HashMap;
 import java.util.Scanner;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.PriorityBlockingQueue;
 import engine.gameEvents.CollisionEvent;
 import engine.gameEvents.DeathEvent;
 import engine.gameEvents.GameEvent;
@@ -286,6 +285,8 @@ public class MedusaClient extends GameInstance
 					case "NewClientMessage":
 					{
 						PlayerObject newPlayer = ((NewClientMessage) incomingMessage).getPlayer();
+						
+						eventManager.addQueue(newPlayer.getParentInstanceID());
 						
 						addToMap(newPlayer);
 						

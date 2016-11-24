@@ -30,7 +30,7 @@ public class EventQueue implements Serializable
 	
 	public boolean containsNullForTS(long ts)
 	{
-		lock.readLock().lock();
+		//lock.readLock().lock();
 		
 		boolean r = false;
 		
@@ -44,18 +44,18 @@ public class EventQueue implements Serializable
 			}
 		}
 		
-		lock.readLock().unlock();
+		//lock.readLock().unlock();
 		
 		return r;
 	}
 	
 	public PriorityBlockingQueue<GameEvent> getQueue()
 	{
-		lock.readLock().lock();
+		//lock.readLock().lock();
 		
 		PriorityBlockingQueue<GameEvent> b = new PriorityBlockingQueue<GameEvent>(queue);
 		
-		lock.readLock().unlock();
+		//lock.readLock().unlock();
 		
 		return b;
 	}
@@ -82,63 +82,63 @@ public class EventQueue implements Serializable
 	
 	public void add(GameEvent e)
 	{
-		lock.writeLock().lock();
+		//lock.writeLock().lock();
 		
 		queue.add(e);
 		
-		lock.writeLock().unlock();
+		//lock.writeLock().unlock();
 	}
 	
 	public long getFirstTimestamp()
 	{
-		lock.readLock().lock();
+		//lock.readLock().lock();
 		
 		long r = queue.peek().getTimeStamp();
 		
-		lock.readLock().unlock();
+		//lock.readLock().unlock();
 		
 		return r;
 	}
 	
 	public GameEvent peek()
 	{
-		lock.readLock().lock();
+		//lock.readLock().lock();
 		
 		GameEvent r = queue.peek();
 		
-		lock.readLock().unlock();
+		//lock.readLock().unlock();
 		
 		return r;
 	}
 	
 	public GameEvent poll()
 	{
-		lock.writeLock().lock();
+		//lock.writeLock().lock();
 		
 		GameEvent r = queue.poll();
 		
-		lock.writeLock().unlock();
+		//lock.writeLock().unlock();
 		
 		return r;
 	}
 
 	public boolean isEmpty()
 	{
-		lock.readLock().lock();
+		//lock.readLock().lock();
 		
 		boolean r = queue.isEmpty();
 		
-		lock.readLock().unlock();
+		//lock.readLock().unlock();
 		
 		return r;
 	}
 
 	public void addAll(ArrayList<GameEvent> t)
 	{
-		lock.writeLock().lock();
+		//lock.writeLock().lock();
 		
 		queue.addAll(t);
 		
-		lock.writeLock().unlock();
+		//lock.writeLock().unlock();
 	}
 }
