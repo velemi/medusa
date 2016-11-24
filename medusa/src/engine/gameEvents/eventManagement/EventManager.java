@@ -20,8 +20,6 @@ public class EventManager
 	
 	EventQueue readyQueue = new EventQueue(null);
 	
-	//PriorityBlockingQueue<GameEvent> readyEventQueue;
-	
 	private ArrayList<GameEvent> tempList = new ArrayList<GameEvent>();
 	
 	private long gvt;
@@ -29,7 +27,6 @@ public class EventManager
 	public EventManager()
 	{
 		handlerMap = new ConcurrentHashMap<String, List<EventHandler>>();
-		//readyEventQueue = new PriorityBlockingQueue<GameEvent>();
 	}
 	
 	public void lockManager()
@@ -44,39 +41,23 @@ public class EventManager
 	
 	public long getGVT()
 	{
-		//lock.readLock().lock();
-		
 		long r = this.gvt;
-		
-		//lock.readLock().unlock();
-		
 		return r;
 	}
 	
 	public void setGVT(long gvt)
 	{
-		//lock.writeLock().lock();
-		
 		this.gvt = gvt;
-		
-		//lock.writeLock().unlock();
 	}
 	
 	public ConcurrentHashMap<UUID, EventQueue> getQueues()
 	{
-		//lock.readLock().lock();
-		
 		ConcurrentHashMap<UUID, EventQueue> r = eventQueues;
-		
-		//lock.readLock().unlock();
-		
 		return r;
 	}
 	
 	public PriorityBlockingQueue<GameEvent> getAllEvents()
 	{
-		//lock.readLock().lock();
-		
 		PriorityBlockingQueue<GameEvent> allEvents = new PriorityBlockingQueue<GameEvent>();
 		
 		for(EventQueue q : eventQueues.values())
@@ -84,15 +65,11 @@ public class EventManager
 			allEvents.addAll(q.queue);
 		}
 		
-		//lock.readLock().unlock();
-		
 		return allEvents;
 	}
 	
 	public void registerHandler(EventHandler handler, String[] eventTypes)
 	{
-		//lock.writeLock().lock();
-		
 		for (String eventType : eventTypes)
 		{
 			handlerMap.putIfAbsent(eventType, Collections.synchronizedList(new ArrayList<EventHandler>()));
@@ -104,14 +81,10 @@ public class EventManager
 				handlerList.add(handler);
 			}
 		}
-		
-		//lock.writeLock().unlock();
 	}
 	
 	public void unregisterHandler(EventHandler handler, String[] eventTypes)
 	{
-		//lock.writeLock().lock();
-		
 		for (String eventType : eventTypes)
 		{
 			if (handlerMap.containsKey(eventType))
@@ -126,68 +99,54 @@ public class EventManager
 				}
 			}
 		}
-		
-		//lock.writeLock().unlock();
 	}
 	
-	public void addQueue(UUID instanceID)
+	public synchronized void addQueue(UUID instanceID)
 	{
-		//lock.writeLock().lock();
-		
 		if (!eventQueues.containsKey(instanceID))
-		{
 			eventQueues.put(instanceID, new EventQueue(instanceID));
-		}
-		
-		//lock.writeLock().unlock();
 	}
 	
-	public void removeQueue(UUID instanceID)
+	public synchronized void removeQueue(UUID instanceID)
 	{
-		//lock.writeLock().lock();
-		
 		eventQueues.remove(instanceID);
-		
-		//lock.writeLock().unlock();
 	}
 	
-	public void queueEvent(GameEvent e)
+	private boolean queueExists(UUID i)
 	{
-		//lock.writeLock().lock();
-		
+		return eventQueues.containsKey(i);
+	}
+	
+	public synchronized void queueEvent(GameEvent e)
+	{
 		UUID instance = e.getInstanceID();
 		
-		//createQueueIfNeeded(instance);
-		
-		if (e instanceof InputEvent)
+		if (queueExists(instance))
 		{
-			synchronized (tempList)
+			if (e instanceof InputEvent)
 			{
-				tempList.clear();
-				tempList.addAll(readyQueue.getQueue());
-				for (GameEvent other : tempList)
+				synchronized (tempList)
 				{
-					if (other instanceof InputEvent
-							&& other.getTimeStamp() == e.getTimeStamp()
-							&& other.getPriority() >= e.getPriority()
-							&& other.getInstanceID().equals(e.getInstanceID()))
+					tempList.clear();
+					tempList.addAll(readyQueue.getQueue());
+					for (GameEvent other : tempList)
 					{
-						e.setPriority(other.getPriority() + 1);
+						if (other instanceof InputEvent
+								&& other.getTimeStamp() == e.getTimeStamp()
+								&& other.getPriority() >= e.getPriority()
+								&& other.getInstanceID().equals(e.getInstanceID()))
+						{
+							e.setPriority(other.getPriority() + 1);
+						}
 					}
 				}
 			}
+			
+			if(e.getTimeStamp() >= gvt)
+				eventQueues.get(instance).add(e);
+			else
+				readyQueue.add(e);
 		}
-		
-		
-		if(e.getTimeStamp() >= gvt)
-			eventQueues.get(instance).add(e);
-		else
-			readyQueue.add(e);
-		
-		
-		//readyQueue.add(e);
-		
-		//lock.writeLock().unlock();
 	}
 	
 	private void dispatchToHandlers(GameEvent e)
@@ -204,6 +163,7 @@ public class EventManager
 		}
 	}
 	
+	@SuppressWarnings("unused")
 	private void printState()
 	{
 		System.out.println("----------------------");
@@ -215,84 +175,51 @@ public class EventManager
 		}
 	}
 	
-	private void waitForNullEvents()
+	private boolean nullsReady()
 	{
-		boolean nullsReceived = true;
+		boolean nullsReady = true;
 		
-		//printState();
-		
-		long lastPrint = 0;
-		
-		do
+		for (EventQueue q : eventQueues.values())
 		{
-			//lock.readLock().lock();
+			while (q.peek() != null && q.getFirstTimestamp() < gvt)
+				readyQueue.add(q.poll());
 			
-			nullsReceived = true;
-			
-			for (EventQueue q : eventQueues.values())
+			if (q.peek() != null && 
+					(!q.peek().isType(NullEvent.class) || q.getFirstTimestamp() > gvt))
 			{
-				
-				if (q.peek() == null || 
-						!(q.peek().isType(NullEvent.class) && q.getFirstTimestamp() <= gvt))
-				{
-					nullsReceived = false;
-					
-					//System.out.println("Null not found for " + q.instanceID);
-				}
-				else if (q.getFirstTimestamp() < gvt)
-				{
-					readyQueue.add(q.poll());
-					nullsReceived = false;
-				}
-				
-			}
-			
-			//lock.readLock().unlock();
-			
-			// TODO make thread sleep until more events have been queued?
-			if (!nullsReceived)
-			{
-				if (lastPrint < gvt)
-				{
-					printState();
-					lastPrint = gvt;
-				}
+				nullsReady = false;
 			}
 		}
-		while(!nullsReceived);
 		
-		printState();
+		return nullsReady;
 	}
 	
-	private void prepareEvents(long cTime)
+	private void readyEvents(long cTime)
 	{
-		while (gvt <= cTime)
+		while (gvt <= cTime && nullsReady())
 		{
-			waitForNullEvents();
-			
-			//lock.writeLock().lock();
-			
 			for (EventQueue q : eventQueues.values())
 			{
 				while (q.peek() != null && q.getFirstTimestamp() <= gvt)
-				{
 					readyQueue.add(q.poll());
-				}
 			}
 			
 			gvt++;
-			
-			//lock.writeLock().unlock();
 		}
 	}
 	
-	public void handleEvents(long currentTime)
+	public boolean handleEvents(long currentTime)
 	{
-		prepareEvents(currentTime);
+		readyEvents(currentTime);
 		
 		while(readyQueue.peek() != null && (readyQueue.getFirstTimestamp() <= currentTime))
 		{
 			dispatchToHandlers(readyQueue.poll());
 		}
+		
+		if (gvt <= currentTime)
+			return false;
+		
+		return true;
 	}
 }

@@ -227,16 +227,30 @@ public class MedusaServer extends GameInstance
 			currentTime = gameTimeline.getTime();
 			while(true)
 			{
-				executionLock.readLock().lock();
 				
 				long newTime = gameTimeline.getTime();
 				
 				while(newTime > currentTime)
 				{
+					executionLock.readLock().lock();
+					
 					NullEvent n = new NullEvent(currentTime, instanceID);
 					queueEvent(n, true);
 					
-					eventManager.handleEvents(currentTime);
+					executionLock.readLock().unlock();
+					
+					boolean handled = false;
+					
+					while (!handled)
+					{
+						executionLock.readLock().lock();
+						
+						handled = eventManager.handleEvents(currentTime);
+						
+						executionLock.readLock().unlock();
+					}
+					
+					executionLock.readLock().lock();
 					
 					currentTime++;
 					
@@ -251,9 +265,10 @@ public class MedusaServer extends GameInstance
 							((PlayerObject) moveObject).doPhysics(gameInstance);
 						}
 					}
+					
+					executionLock.readLock().unlock();
 				}
 				
-				executionLock.readLock().unlock();
 			}
 		}
 	}
@@ -384,8 +399,6 @@ public class MedusaServer extends GameInstance
 					{
 						GameEvent incomingEvent = ((GameEventMessage) incomingMessage).getEvent();
 						
-						//System.out.println(incomingEvent + ", ts = " + incomingEvent.getTimeStamp());
-						
 						queueEvent(incomingEvent, true);
 						
 						break;
@@ -459,11 +472,15 @@ public class MedusaServer extends GameInstance
 		
 		private void initClientTimeline() throws IOException
 		{
+			//System.out.println("sTime");
+			
 			networkOutput.writeLong(gameTimeline.getTime());
 		}
 		
 		private void initClientObjects() throws IOException
 		{
+			//System.out.println("sObjects");
+			
 			clientInstanceID = UUID.randomUUID();
 			
 			playerObject = createNewPlayer();
@@ -476,6 +493,8 @@ public class MedusaServer extends GameInstance
 		
 		private void initClientEvents() throws IOException
 		{
+			//System.out.println("sEvents");
+			
 			eventManager.addQueue(clientInstanceID);
 			NullEvent n = new NullEvent(currentTime, clientInstanceID);
 			
@@ -487,6 +506,8 @@ public class MedusaServer extends GameInstance
 		
 		protected void initDataTransactions()
 		{
+			//System.out.println("lock");
+			
 			executionLock.writeLock().lock();
 			
 			System.out.println("Accepted new client");

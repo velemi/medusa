@@ -209,7 +209,8 @@ public class MedusaClient extends GameInstance
 		
 		public void run()
 		{
-			//currentTime = gameTimeline.getTime();
+			System.out.println("Client's id is: " + instanceID);
+			
 			while(true)
 			{
 				long newTime = gameTimeline.getTime();
@@ -219,7 +220,12 @@ public class MedusaClient extends GameInstance
 					NullEvent n = new NullEvent(currentTime, instanceID);
 					queueEvent(n, true);
 					
-					eventManager.handleEvents(currentTime);
+					boolean handled = false;
+					
+					while (!handled)
+					{
+						handled = eventManager.handleEvents(currentTime);
+					}
 					
 					currentTime++;
 					
@@ -349,12 +355,16 @@ public class MedusaClient extends GameInstance
 		
 		private void initTimeline() throws IOException
 		{
+			//System.out.println("time");
+			
 			gameTimeline = new Timeline(networkInput.readLong(), 1000000000L
 					/ TARGET_FRAMERATE);
 		}
 		
 		private void initObjects() throws ClassNotFoundException, IOException
 		{
+			//System.out.println("objects");
+			
 			playerObject = (PlayerObject) networkInput.readObject();
 			instanceID = playerObject.getParentInstanceID();
 			
@@ -371,6 +381,8 @@ public class MedusaClient extends GameInstance
 		
 		private void initEvents() throws IOException, ClassNotFoundException
 		{
+			//System.out.println("events");
+			
 			@SuppressWarnings("unchecked")
 			ConcurrentHashMap<UUID, EventQueue> queues = 
 					(ConcurrentHashMap<UUID, EventQueue>) networkInput.readObject();
