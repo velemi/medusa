@@ -1,19 +1,22 @@
 package engine.gameObjects;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.UUID;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-public class GameObjectSet
+public class GameObjectSet implements Serializable
 {
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+
 	private ReentrantReadWriteLock lock = new ReentrantReadWriteLock(true);
 	
 	private HashMap<UUID, GameObject> objectMap = new HashMap<UUID, GameObject>();
 	private HashMap<UUID, PlayerObject> playerObjects = new HashMap<UUID, PlayerObject>();
-	
-//	private ArrayList<GameObject> renderables = new ArrayList<GameObject>();
-//	private ArrayList<GameObject> spawnPoints = new ArrayList<GameObject>();
 	
 	public GameObjectSet()
 	{

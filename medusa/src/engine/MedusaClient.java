@@ -11,6 +11,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import engine.gameEvents.CollisionEvent;
 import engine.gameEvents.DeathEvent;
+import engine.gameEvents.DespawnEvent;
 import engine.gameEvents.GameEvent;
 import engine.gameEvents.InputEvent;
 import engine.gameEvents.NullEvent;
@@ -48,8 +49,6 @@ public class MedusaClient extends GameInstance
 		@Override
 		public void handleEvent(GameEvent e)
 		{
-			//System.out.println(e.getEventType());
-			
 			switch (e.getEventType())
 			{
 				case "CollisionEvent":
@@ -70,6 +69,11 @@ public class MedusaClient extends GameInstance
 				case "SpawnEvent":
 				{
 					handle((SpawnEvent) e);
+					break;
+				}
+				case "DespawnEvent":
+				{
+					handle((DespawnEvent) e);
 					break;
 				}
 				default:
@@ -104,12 +108,6 @@ public class MedusaClient extends GameInstance
 			
 			if (p != null)
 			{
-//				if (e.getPlayer() != null)
-//				{
-//					p.x = e.getPlayer().x;
-//					p.y = e.getPlayer().y;
-//				}
-				
 				switch (e.getInput())
 				{
 					case "LEFT PRESSED":
@@ -146,6 +144,40 @@ public class MedusaClient extends GameInstance
 						break;
 				}
 			}
+			else
+			{
+				switch(e.getInput())
+				{
+
+					case "START RECORD":
+					{
+						replayManager.startRecording();
+						break;
+					}
+					case "STOP RECORD":
+					{
+						replayManager.stopRecording();
+						break;
+					}
+					case "PLAYBACK60":
+					{
+						replayManager.playReplay(60);
+						break;
+					}
+					case "PLAYBACK30":
+					{
+						replayManager.playReplay(30);
+						break;
+					}
+					case "PLAYBACK120":
+					{
+						replayManager.playReplay(120);
+						break;
+					}
+					default:
+						break;
+				}
+			}
 		}
 		
 		private void handle(DeathEvent e)
@@ -175,6 +207,16 @@ public class MedusaClient extends GameInstance
 				{
 					addToMap(object);
 				}
+			}
+		}
+		
+		private void handle(DespawnEvent e)
+		{
+			GameObject object = e.getObject();
+			
+			if (objectMap.contains(object))
+			{
+				removeFromMap(object);
 			}
 		}
 	}
@@ -284,7 +326,9 @@ public class MedusaClient extends GameInstance
 						
 						eventManager.removeQueue(disconnectedClient);
 						
-						removeFromMap(objectMap.getPlayerObject(disconnectedClient));
+						//removeFromMap(objectMap.getPlayerObject(disconnectedClient));
+						eventManager.queueEvent(new DespawnEvent(currentTime, instanceID, 
+								objectMap.getPlayerObject(disconnectedClient)));
 						
 						break;
 					}
@@ -294,7 +338,8 @@ public class MedusaClient extends GameInstance
 						
 						eventManager.addQueue(newPlayer.getParentInstanceID());
 						
-						addToMap(newPlayer);
+						//addToMap(newPlayer);
+						eventManager.queueEvent(new SpawnEvent(currentTime, instanceID, playerObject));
 						
 						break;
 					}
@@ -400,7 +445,7 @@ public class MedusaClient extends GameInstance
 			}
 			
 			eventManager.registerHandler(new ClientEventHandler(), new String[ ] {
-					"CollisionEvent", "InputEvent", "DeathEvent", "SpawnEvent" });
+					"CollisionEvent", "InputEvent", "DeathEvent", "SpawnEvent", "DespawnEvent" });
 			
 			eventManager.setGVT(serverGVT);
 			currentTime = serverGVT;

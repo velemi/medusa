@@ -8,9 +8,9 @@ import java.net.Socket;
 import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.UUID;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 import engine.gameEvents.CollisionEvent;
 import engine.gameEvents.DeathEvent;
+import engine.gameEvents.DespawnEvent;
 import engine.gameEvents.GameEvent;
 import engine.gameEvents.InputEvent;
 import engine.gameEvents.NullEvent;
@@ -41,8 +41,6 @@ public class MedusaServer extends GameInstance
 {
 	public static final boolean DEBUG = GameInstance.DEBUG;
 	
-	private ReentrantReadWriteLock executionLock = new ReentrantReadWriteLock(true);
-	
 	private class ServerEventHandler implements EventHandler
 	{
 		@Override
@@ -70,6 +68,11 @@ public class MedusaServer extends GameInstance
 				case "SpawnEvent":
 				{
 					handle((SpawnEvent) e);
+					break;
+				}
+				case "DespawnEvent":
+				{
+					handle((DespawnEvent) e);
 					break;
 				}
 				default:
@@ -104,12 +107,6 @@ public class MedusaServer extends GameInstance
 			
 			if (p != null)
 			{
-//				if (e.getPlayer() != null)
-//				{
-//					p.x = e.getPlayer().x;
-//					p.y = e.getPlayer().y;
-//				}
-				
 				switch (e.getInput())
 				{
 					case "LEFT PRESSED":
@@ -140,6 +137,40 @@ public class MedusaServer extends GameInstance
 					case "JUMP RELEASED":
 					{
 						p.setJumpPressed(false);
+						break;
+					}
+					default:
+						break;
+				}
+			}
+			else
+			{
+				switch(e.getInput())
+				{
+
+					case "START RECORD":
+					{
+						replayManager.startRecording();
+						break;
+					}
+					case "STOP RECORD":
+					{
+						replayManager.stopRecording();
+						break;
+					}
+					case "PLAYBACK60":
+					{
+						replayManager.playReplay(60);
+						break;
+					}
+					case "PLAYBACK30":
+					{
+						replayManager.playReplay(30);
+						break;
+					}
+					case "PLAYBACK120":
+					{
+						replayManager.playReplay(120);
 						break;
 					}
 					default:
@@ -177,12 +208,22 @@ public class MedusaServer extends GameInstance
 				}
 			}
 		}
+		
+		private void handle(DespawnEvent e)
+		{
+			GameObject object = e.getObject();
+			
+			if (objectMap.contains(object))
+			{
+				removeFromMap(object);
+			}
+		}
 	}
 	
 	@Override
 	public void queueEvent(GameEvent e, boolean propagate)
 	{
-		executionLock.readLock().lock();
+		exeLock.readLock().lock();
 		
 		eventManager.queueEvent(e);
 		
@@ -200,7 +241,7 @@ public class MedusaServer extends GameInstance
 			}
 		}
 		
-		executionLock.readLock().unlock();
+		exeLock.readLock().unlock();
 	}
 	
 	private ServerLogicThread serverLogicThread = new ServerLogicThread(this);
@@ -227,30 +268,29 @@ public class MedusaServer extends GameInstance
 			currentTime = gameTimeline.getTime();
 			while(true)
 			{
-				
 				long newTime = gameTimeline.getTime();
 				
 				while(newTime > currentTime)
 				{
-					executionLock.readLock().lock();
+					exeLock.readLock().lock();
 					
 					NullEvent n = new NullEvent(currentTime, instanceID);
 					queueEvent(n, true);
 					
-					executionLock.readLock().unlock();
+					exeLock.readLock().unlock();
 					
 					boolean handled = false;
 					
 					while (!handled)
 					{
-						executionLock.readLock().lock();
+						exeLock.readLock().lock();
 						
 						handled = eventManager.handleEvents(currentTime);
 						
-						executionLock.readLock().unlock();
+						exeLock.readLock().unlock();
 					}
 					
-					executionLock.readLock().lock();
+					exeLock.readLock().lock();
 					
 					currentTime++;
 					
@@ -266,7 +306,7 @@ public class MedusaServer extends GameInstance
 						}
 					}
 					
-					executionLock.readLock().unlock();
+					exeLock.readLock().unlock();
 				}
 				
 			}
@@ -371,7 +411,9 @@ public class MedusaServer extends GameInstance
 		protected void disconnect()
 		{
 			super.disconnect();
-			removeFromMap(playerObject);
+			
+			//removeFromMap(playerObject);
+			eventManager.queueEvent(new DespawnEvent(currentTime, instanceID, playerObject));
 			
 			eventManager.removeQueue(clientInstanceID);
 			
@@ -391,7 +433,7 @@ public class MedusaServer extends GameInstance
 			@Override
 			protected void respondToMessage()
 			{
-				executionLock.readLock().lock();
+				exeLock.readLock().lock();
 				
 				switch (incomingMessage.getMessageType())
 				{
@@ -403,13 +445,15 @@ public class MedusaServer extends GameInstance
 						
 						break;
 					}
-					case "ClientDisconnectMessage":
+					case "ClientDisconnectMessage":		// does server ever actually get these messages?
 					{
 						UUID disconnectedClient = ((ClientDisconnectMessage) incomingMessage).getClientID();
 						
 						eventManager.removeQueue(disconnectedClient);
 						
-						removeFromMap(objectMap.getPlayerObject(disconnectedClient));
+						//removeFromMap(objectMap.getPlayerObject(disconnectedClient));
+						eventManager.queueEvent(new DespawnEvent(currentTime, instanceID, 
+								objectMap.getPlayerObject(disconnectedClient)));
 						
 						for (ClientHandler client : clientList)
 						{
@@ -434,7 +478,7 @@ public class MedusaServer extends GameInstance
 						break;
 				}
 				
-				executionLock.readLock().unlock();
+				exeLock.readLock().unlock();
 			}
 		}
 		
@@ -488,7 +532,9 @@ public class MedusaServer extends GameInstance
 			networkOutput.writeObject(playerObject);
 			
 			networkOutput.writeObject(objectMap.getFullMap());
-			addToMap(playerObject);
+			
+			//addToMap(playerObject);
+			eventManager.queueEvent(new SpawnEvent(currentTime, instanceID, playerObject));
 		}
 		
 		private void initClientEvents() throws IOException
@@ -508,7 +554,7 @@ public class MedusaServer extends GameInstance
 		{
 			//System.out.println("lock");
 			
-			executionLock.writeLock().lock();
+			exeLock.writeLock().lock();
 			
 			System.out.println("Accepted new client");
 			
@@ -533,7 +579,7 @@ public class MedusaServer extends GameInstance
 				e.printStackTrace();
 			}
 			
-			executionLock.writeLock().unlock();
+			exeLock.writeLock().unlock();
 		}
 	}
 	
@@ -583,7 +629,7 @@ public class MedusaServer extends GameInstance
 		//replayManager = new ReplayManager(this);
 		
 		eventManager.registerHandler(new ServerEventHandler(), new String[ ] {
-				"CollisionEvent", "InputEvent", "DeathEvent", "SpawnEvent" });
+				"CollisionEvent", "InputEvent", "DeathEvent", "SpawnEvent", "DespawnEvent" });
 		
 		eventManager.addQueue(instanceID);
 		eventManager.setGVT(0);
@@ -602,18 +648,36 @@ public class MedusaServer extends GameInstance
 	 */
 	public void keyPressed()
 	{
-		String inputString = "";
-		
-		if (key == 'R' || key == 'r')
+		if (!replayManager.isPlaying())
 		{
-//			if (!replayManager.record)
-//				inputString = "START RECORDING";
-//			else
-//				inputString = "STOP RECORDING";
+			String inputString = "";
+			if (key == 'R' || key == 'r')
+			{
+				if (!replayManager.isRecording())
+				{
+					inputString = "START RECORD";
+				}
+				else
+				{
+					inputString = "STOP RECORD";
+				}
+			}
+			else if (key == 'K' || key == 'k')
+			{
+				inputString = "PLAYBACK60";
+			}
+			else if (key == 'J' || key == 'j')
+			{
+				inputString = "PLAYBACK30";
+			}
+			else if (key == 'L' || key == 'l')
+			{
+				inputString = "PLAYBACK120";
+			}
+			
+			if (!inputString.equals(""))
+				queueEvent(new InputEvent(gameTimeline.getTime() + 1, getInstanceID(), inputString, null), true);
 		}
-		
-		if (!inputString.equals(""))
-			queueEvent(new InputEvent(gameTimeline.getTime(), getInstanceID(), inputString, null), true);
 	}
 	
 	/** Runs this game server */

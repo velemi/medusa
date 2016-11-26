@@ -4,7 +4,6 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.UUID;
 import java.util.concurrent.PriorityBlockingQueue;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 import engine.gameEvents.GameEvent;
 import engine.gameEvents.NullEvent;
 
@@ -15,8 +14,6 @@ public class EventQueue implements Serializable
 	PriorityBlockingQueue<GameEvent> queue = new PriorityBlockingQueue<GameEvent>();
 	
 	UUID instanceID;
-	
-	private ReentrantReadWriteLock lock = new ReentrantReadWriteLock(true);
 	
 	public EventQueue(UUID instanceID)
 	{

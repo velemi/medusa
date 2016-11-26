@@ -142,10 +142,12 @@ public class EventManager
 				}
 			}
 			
-			if(e.getTimeStamp() >= gvt)
-				eventQueues.get(instance).add(e);
-			else
-				readyQueue.add(e);
+			eventQueues.get(instance).add(e);
+			
+//			if(e.getTimeStamp() >= gvt)
+//				eventQueues.get(instance).add(e);
+//			else
+//				readyQueue.add(e);
 		}
 	}
 	
@@ -212,14 +214,19 @@ public class EventManager
 	{
 		readyEvents(currentTime);
 		
-		while(readyQueue.peek() != null && (readyQueue.getFirstTimestamp() <= currentTime))
-		{
-			dispatchToHandlers(readyQueue.poll());
-		}
+		handleFromQueue(currentTime, readyQueue);
 		
 		if (gvt <= currentTime)
 			return false;
 		
 		return true;
+	}
+	
+	public void handleFromQueue(long cTime, EventQueue queue)
+	{
+		while(queue.peek() != null && (queue.getFirstTimestamp() <= cTime))
+		{
+			dispatchToHandlers(queue.poll());
+		}
 	}
 }

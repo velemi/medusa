@@ -7,7 +7,7 @@ public class Timeline
 	private Timeline anchorTimeline = null;
 	
 	// The point on the anchor Timeline which is considered time = 0 for this Timeline
-	private long origin;
+	private Long origin;
 	
 	// The number of ticks of the anchoring Timeline which equals one tick on this Timeline
 	private long tickSize;
@@ -22,6 +22,11 @@ public class Timeline
 	public Timeline(long tickSize)
 	{
 		this(0, tickSize);
+	}
+	
+	public boolean isPaused()
+	{
+		return paused;
 	}
 	
 	public Timeline(Timeline base)
@@ -66,13 +71,17 @@ public class Timeline
 	{
 		if (!paused)
 		{
-			if (anchorTimeline == null)	//if anchored to real time
+			synchronized (origin)
 			{
-				return (System.nanoTime() - this.origin) / this.tickSize;
-			}
-			else	//if anchored to another timeline
-			{
-				return (anchorTimeline.getTime() - this.origin) / this.tickSize;
+				if (anchorTimeline == null)	//if anchored to real time
+				{
+					return (System.nanoTime() - this.origin) / this.tickSize;
+				}
+				else	//if anchored to another timeline
+				{
+					return (anchorTimeline.getTime() - this.origin)
+							/ this.tickSize;
+				}
 			} 
 		}
 		else
@@ -85,15 +94,18 @@ public class Timeline
 	{
 		if(!paused)
 		{
-			if (anchorTimeline == null)	//if anchored to real time
+			synchronized (origin)
 			{
-				pauseTime = (System.nanoTime() - this.origin) / this.tickSize;
+				if (anchorTimeline == null)	//if anchored to real time
+				{
+					pauseTime = getTime();
+				}
+				else	//if anchored to another timeline
+				{
+					pauseTime = (anchorTimeline.getTime() - this.origin)
+							/ this.tickSize;
+				}
 			}
-			else	//if anchored to another timeline
-			{
-				pauseTime = (anchorTimeline.getTime() - this.origin) / this.tickSize;
-			}
-			
 			paused = true;
 		}
 	}
@@ -102,16 +114,21 @@ public class Timeline
 	{
 		if(paused)
 		{
-			if (anchorTimeline == null)	//if anchored to real time
+			synchronized (origin)
 			{
-				origin += ((System.nanoTime() - this.origin) / this.tickSize) - pauseTime;
+				if (anchorTimeline == null)	//if anchored to real time
+				{
+					long t = (System.nanoTime() - this.origin) / this.tickSize;
+					long diff = t - pauseTime;
+					origin = origin + diff * tickSize;
+				}
+				else	//if anchored to another timeline
+				{
+					origin += ((anchorTimeline.getTime() - this.origin)
+							/ this.tickSize) - pauseTime;
+				}
+				paused = false;
 			}
-			else	//if anchored to another timeline
-			{
-				origin += ((anchorTimeline.getTime() - this.origin) / this.tickSize) - pauseTime;
-			}
-			
-			paused = false;
 		}
 	}
 	
