@@ -70,6 +70,11 @@ public class HorizontalMovingBlock extends Block implements PhysicsObject
 	{
 		return movementDirection;
 	}
+	
+	public float getMovementSpeed()
+	{
+		return movementSpeed;
+	}
 
 	public void setMovementDirection(int movementDirection)
 	{

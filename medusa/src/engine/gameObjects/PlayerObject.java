@@ -3,6 +3,7 @@ package engine.gameObjects;
 import java.util.ArrayList;
 import java.util.UUID;
 import engine.GameInstance;
+import engine.ScriptManager;
 import engine.gameEvents.CollisionEvent;
 import engine.gameObjects.objectClasses.Killable;
 import engine.gameObjects.objectClasses.PhysicsObject;
@@ -188,9 +189,10 @@ public class PlayerObject
 	 * Checks to see if this PlayerObject is about to collide with any other
 	 * game objects, and acts accordingly.
 	 */
-	private void handlePhysicalCollisions(GameInstance parent)
+	@SuppressWarnings("unused")
+	private void avoidPhysicalCollisions(GameInstance instance)
 	{
-		ArrayList<GameObject> standingOn = parent.getPhysicalCollisions(x, this.bottomBorder()
+		ArrayList<GameObject> standingOn = instance.getPhysicalCollisions(x, this.bottomBorder()
 				+ 1, width, 1);
 				
 		if (!standingOn.isEmpty())
@@ -209,11 +211,11 @@ public class PlayerObject
 		// horizontal collision
 		if (movementDirection > 0)
 		{
-			if (parent.checkForPhysicalCollision(this.rightBorder()
+			if (instance.checkForPhysicalCollision(this.rightBorder()
 					+ hSpeed, y, 1, height))
 			{
 				// x = Math.round(x);
-				while(!parent.checkForPhysicalCollision(this.rightBorder()
+				while(!instance.checkForPhysicalCollision(this.rightBorder()
 						+ movementDirection, y, 1, height))
 				{
 					x += movementDirection;
@@ -223,11 +225,11 @@ public class PlayerObject
 		}
 		else if (movementDirection < 0)
 		{
-			if (parent.checkForPhysicalCollision(this.leftBorder() + hSpeed
+			if (instance.checkForPhysicalCollision(this.leftBorder() + hSpeed
 					- 1, y, 1, height))
 			{
 				// x = Math.round(x);
-				while(!parent.checkForPhysicalCollision(this.leftBorder()
+				while(!instance.checkForPhysicalCollision(this.leftBorder()
 						+ movementDirection
 						- 1, y, 1, height))
 				{
@@ -241,11 +243,11 @@ public class PlayerObject
 		// vertical collision
 		if (vDirection > 0)
 		{
-			if (parent.checkForPhysicalCollision(x, this.bottomBorder()
+			if (instance.checkForPhysicalCollision(x, this.bottomBorder()
 					+ vSpeed, width, 1))
 			{
 				// y = Math.round(y);
-				while(!parent.checkForPhysicalCollision(x, this.bottomBorder()
+				while(!instance.checkForPhysicalCollision(x, this.bottomBorder()
 						+ vDirection, width, 1))
 				{
 					y += vDirection;
@@ -255,11 +257,11 @@ public class PlayerObject
 		}
 		else if (vDirection < 0)
 		{
-			if (parent.checkForPhysicalCollision(x, this.topBorder() + vSpeed
+			if (instance.checkForPhysicalCollision(x, this.topBorder() + vSpeed
 					- 1, width, 1))
 			{
 				// y = Math.round(y);
-				while(!parent.checkForPhysicalCollision(x, this.topBorder()
+				while(!instance.checkForPhysicalCollision(x, this.topBorder()
 						+ vDirection - 1, width, 1))
 				{
 					y += vDirection;
@@ -270,48 +272,66 @@ public class PlayerObject
 		
 	}
 	
-	private synchronized void handleNonPhysicalCollisions(GameInstance parent)
+	private synchronized void handleNonPhysicalCollisions(GameInstance instance)
 	{
-		for (GameObject e : parent.getColliding(this))
+		for (GameObject e : instance.getColliding(this))
 		{
-			parent.queueEvent(new CollisionEvent(parent.getCurrentTime() + 1,
+			instance.queueEvent(new CollisionEvent(instance.getCurrentTime() + 1,
 							parentInstanceID, this.getID(), e.getID()), false);
 		}
 	}
 	
-	/** Updates this PlayerObject's position based on its current state. */
-	public synchronized void doPhysics(GameInstance parent)
+	private void exposeScriptingObjects(GameInstance instance)
 	{
-		movementDirection = 0;
-		if (leftPressed)
-			movementDirection -= 1;
-		if (rightPressed)
-			movementDirection += 1;
-			
-		hSpeed = movementSpeed * movementDirection;
+		ScriptManager.bindArgument("movementDirection", movementDirection);
+		ScriptManager.bindArgument("leftPressed", leftPressed);
+		ScriptManager.bindArgument("rightPressed", rightPressed);
+		ScriptManager.bindArgument("jumpPressed", jumpPressed);
+		ScriptManager.bindArgument("movementSpeed", movementSpeed);
+		ScriptManager.bindArgument("hSpeed", hSpeed);
+		ScriptManager.bindArgument("vSpeed", vSpeed);
+		ScriptManager.bindArgument("maxFallSpeed", maxFallSpeed);
+		ScriptManager.bindArgument("gravity", gravity);
+		ScriptManager.bindArgument("canJump", canJump);
+		ScriptManager.bindArgument("jumpSpeed", jumpSpeed);
+		ScriptManager.bindArgument("x", x);
+		ScriptManager.bindArgument("y", y);
+		ScriptManager.bindArgument("height", height);
+		ScriptManager.bindArgument("width", width);
 		
-		if (vSpeed < maxFallSpeed)
-			vSpeed += gravity;
-			
-		canJump = false;
-		if (parent.checkForPhysicalCollision(x, y + height + 1, width, 1))
-		{
-			canJump = true;
-		}
+		ScriptManager.bindArgument("instance", instance);
 		
-		if (canJump && jumpPressed)
-		{
-			vSpeed = -1 * jumpSpeed;
-		}
+		//ScriptManager.bindArgument("HorizontalMovingBlock", HorizontalMovingBlock.class);
+	}
+	
+	private void updateVariables()
+	{
+		movementDirection = ((Number) ScriptManager.retrieveValue("movementDirection")).intValue();
+		leftPressed = (boolean) ScriptManager.retrieveValue("leftPressed");
+		rightPressed = (boolean) ScriptManager.retrieveValue("rightPressed");
+		jumpPressed = (boolean) ScriptManager.retrieveValue("jumpPressed");
+		movementSpeed = ((Number) ScriptManager.retrieveValue("movementSpeed")).floatValue();
+		hSpeed = ((Number) ScriptManager.retrieveValue("hSpeed")).floatValue();
+		vSpeed = ((Number) ScriptManager.retrieveValue("vSpeed")).floatValue();
+		maxFallSpeed = ((Number) ScriptManager.retrieveValue("maxFallSpeed")).floatValue();
+		gravity = ((Number) ScriptManager.retrieveValue("gravity")).floatValue();
+		jumpSpeed = ((Number) ScriptManager.retrieveValue("jumpSpeed")).floatValue();
+		canJump = (boolean) ScriptManager.retrieveValue("canJump");
+		x = ((Number) ScriptManager.retrieveValue("x")).floatValue();
+		y = ((Number) ScriptManager.retrieveValue("y")).floatValue();
+		height = ((Number) ScriptManager.retrieveValue("height")).floatValue();
+		width = ((Number) ScriptManager.retrieveValue("width")).floatValue();
+	}
+	
+	/** Updates this PlayerObject's position based on its current state. */
+	public synchronized void doPhysics(GameInstance instance)
+	{
+		exposeScriptingObjects(instance);
+		ScriptManager.loadScript("src/scripts/player_behaviour.js");
+		updateVariables();
+		ScriptManager.clearBindings();
 		
-		// handle any incoming collisions
-		handlePhysicalCollisions(parent);
-		
-		// move the player object
-		x += hSpeed;
-		y += vSpeed;
-		
-		handleNonPhysicalCollisions(parent);
+		handleNonPhysicalCollisions(instance);
 	}
 	
 	public static PlayerObject createNew()
