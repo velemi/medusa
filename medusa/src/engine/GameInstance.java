@@ -10,16 +10,16 @@ import engine.gameEvents.DeathEvent;
 import engine.gameEvents.DespawnEvent;
 import engine.gameEvents.GameEvent;
 import engine.gameEvents.InputEvent;
+import engine.gameEvents.NullEvent;
 import engine.gameEvents.SpawnEvent;
+import engine.gameEvents.eventManagement.EventHandler;
 import engine.gameEvents.eventManagement.EventManager;
 import engine.gameObjects.GameObject;
 import engine.gameObjects.GameObjectSet;
 import engine.gameObjects.PlayerObject;
 import engine.gameObjects.SpawnPoint;
-import engine.gameObjects.objectClasses.Killable;
 import engine.gameObjects.objectClasses.PhysicsObject;
 import engine.gameObjects.objectClasses.RenderableObject;
-import engine.gameObjects.objectClasses.Spawnable;
 import engine.replay.GameReplay;
 import engine.time.Timeline;
 import processing.core.PApplet;
@@ -57,27 +57,6 @@ public abstract class GameInstance extends PApplet
 	
 	long currentTime;
 	
-	public abstract void queueEvent(GameEvent e, boolean propagate);
-	
-	protected void pauseExeAndTime()
-	{
-		exeLock.writeLock().lock();
-		
-		gameTimeline.pause();
-	}
-	
-	protected void resumeExeAndTime()
-	{
-		gameTimeline.resume();
-		
-		exeLock.writeLock().unlock();
-	}
-	
-	public UUID getInstanceID()
-	{
-		return this.instanceID;
-	}
-	
 	public void addToMap(GameObject object)
 	{
 		objectMap.addToSet(object);
@@ -86,6 +65,15 @@ public abstract class GameInstance extends PApplet
 	public void removeFromMap(GameObject object)
 	{
 		objectMap.removeFromSet(object);
+	}
+	
+	public boolean checkForPhysicalCollision(double x, double y, double w,
+			double h)
+	{
+		if (!replayManager.playing)
+			return objectMap.checkPhysCollision(x, y, w, h);
+		else
+			return replayManager.rObjects.checkPhysCollision(x, y, w, h);
 	}
 	
 	public PlayerObject createNewPlayer()
@@ -109,41 +97,6 @@ public abstract class GameInstance extends PApplet
 		}
 		
 		return newPlayer;
-	}
-	
-	public ArrayList<GameObject> getColliding(GameObject o)
-	{
-		if (!replayManager.playing)
-			return objectMap.getColliding(o, false);
-		else
-			return replayManager.rObjects.getColliding(o, false);
-	}
-	
-	public ArrayList<GameObject> getPhysicalCollisions(double x, double y,
-			double w, double h)
-	{
-		if (!replayManager.playing)
-			return objectMap.getColliding(x, y, w, h, true);
-		else
-			return replayManager.rObjects.getColliding(x, y, w, h, true);
-	}
-	
-	public boolean checkForPhysicalCollision(double x, double y, double w,
-			double h)
-	{
-		if (!replayManager.playing)
-			return objectMap.checkPhysCollision(x, y, w, h);
-		else
-			return replayManager.rObjects.checkPhysCollision(x, y, w, h);
-	}
-	
-	/*
-	 * Defines PApplet settings for size() and smooth() values. (non-Javadoc)
-	 * @see processing.core.PApplet#settings()
-	 */
-	public void settings()
-	{
-		size(SCREEN_WIDTH, SCREEN_HEIGHT);
 	}
 	
 	/*
@@ -192,9 +145,56 @@ public abstract class GameInstance extends PApplet
 		//System.out.println("end");
 	}
 	
+	public ArrayList<GameObject> getColliding(GameObject o)
+	{
+		if (!replayManager.playing)
+			return objectMap.getColliding(o, false);
+		else
+			return replayManager.rObjects.getColliding(o, false);
+	}
+	
 	public long getCurrentTime()
 	{
 		return currentTime;
+	}
+	
+	public UUID getInstanceID()
+	{
+		return this.instanceID;
+	}
+	
+	public ArrayList<GameObject> getPhysicalCollisions(double x, double y,
+			double w, double h)
+	{
+		if (!replayManager.playing)
+			return objectMap.getColliding(x, y, w, h, true);
+		else
+			return replayManager.rObjects.getColliding(x, y, w, h, true);
+	}
+	
+	public abstract void queueEvent(GameEvent e, boolean propagate);
+	
+	/*
+	 * Defines PApplet settings for size() and smooth() values. (non-Javadoc)
+	 * @see processing.core.PApplet#settings()
+	 */
+	public void settings()
+	{
+		size(SCREEN_WIDTH, SCREEN_HEIGHT);
+	}
+	
+	protected void pauseExeAndTime()
+	{
+		exeLock.writeLock().lock();
+		
+		gameTimeline.pause();
+	}
+	
+	protected void resumeExeAndTime()
+	{
+		gameTimeline.resume();
+		
+		exeLock.writeLock().unlock();
 	}
 	
 	public class ReplayManager
@@ -218,17 +218,23 @@ public abstract class GameInstance extends PApplet
 			gameInstance = i;
 		}
 		
-		private class RStartThread extends Thread
+		public boolean isPlaying()
 		{
-			public void run()
+			return playing;
+		}
+		
+		public boolean isRecording()
+		{
+			return recording;
+		}
+		
+		public void playReplay(long fps)
+		{
+			if (replay != null && replay.isComplete() && !playing)
 			{
-				pauseExeAndTime();
+				this.fps = fps;
 				
-				recording = true;
-				
-				replay = new GameReplay(objectMap, eventManager, currentTime);
-				
-				resumeExeAndTime();
+				new ReplayLogicThread().start();
 			}
 		}
 		
@@ -237,33 +243,83 @@ public abstract class GameInstance extends PApplet
 			new RStartThread().start();
 		}
 		
-		private class RStopThread extends Thread
-		{
-			public void run()
-			{
-				pauseExeAndTime();
-				
-				replay.stopRecording(currentTime);
-				
-				recording = false;
-				
-				resumeExeAndTime();
-			}
-		}
-		
 		public void stopRecording()
 		{
 			new RStopThread().start();
 		}
 		
-		public boolean isRecording()
+		private void handle(CollisionEvent e)
 		{
-			return recording;
+			ScriptManager.bindArgument("objectMap", objectMap);
+			ScriptManager.bindArgument("e", e);
+			ScriptManager.bindArgument("instance", thisInstance);
+			
+			ScriptManager.loadScript("scripts/platformer/collisionEvent_handling.js");
+			
+			ScriptManager.invokeFunction("handle", true);
+			
+			ScriptManager.clearBindings();
 		}
 		
-		public boolean isPlaying()
+		private void handle(DeathEvent e)
 		{
-			return playing;
+			ScriptManager.bindArgument("objectMap", objectMap);
+			ScriptManager.bindArgument("e", e);
+			ScriptManager.bindArgument("instance", thisInstance);
+			
+			ScriptManager.loadScript("scripts/platformer/deathEvent_handling.js");
+			
+			ScriptManager.invokeFunction("handle", true);
+			
+			ScriptManager.clearBindings();
+		}
+		
+		private void handle(DespawnEvent e)
+		{
+			ScriptManager.bindArgument("objectMap", objectMap);
+			ScriptManager.bindArgument("e", e);
+			ScriptManager.bindArgument("instance", thisInstance);
+			
+			ScriptManager.loadScript("scripts/platformer/despawnEvent_handling.js");
+			
+			ScriptManager.invokeFunction("handle", true);
+			
+			ScriptManager.clearBindings();
+		}
+		
+		private void handle(InputEvent e)
+		{
+			ScriptManager.bindArgument("objectMap", objectMap);
+			ScriptManager.bindArgument("e", e);
+			ScriptManager.bindArgument("replayManager", replayManager);
+			
+			ScriptManager.loadScript("scripts/platformer/inputEvent_handling.js");
+			
+			ScriptManager.invokeFunction("handle", true);
+			
+			ScriptManager.clearBindings();
+
+		}
+		
+		private void handle(SpawnEvent e)
+		{
+			ScriptManager.bindArgument("objectMap", objectMap);
+			ScriptManager.bindArgument("e", e);
+			ScriptManager.bindArgument("instance", thisInstance);
+			
+			ScriptManager.loadScript("scripts/platformer/spawnEvent_handling.js");
+			
+			ScriptManager.invokeFunction("handle", true);
+			
+			ScriptManager.clearBindings();
+		}
+		
+		private void handleFromQueue(long cTime, ConcurrentLinkedQueue<GameEvent> queue)
+		{
+			while(queue.peek() != null && (queue.peek().getTimeStamp() <= cTime))
+			{
+				replayHandle(queue.poll());
+			}
 		}
 		
 		private void replayHandle(GameEvent e)
@@ -302,80 +358,6 @@ public abstract class GameInstance extends PApplet
 				}
 				default:
 					break;
-			}
-		}
-		
-		private void handle(CollisionEvent e)
-		{
-			ScriptManager.bindArgument("objectMap", objectMap);
-			ScriptManager.bindArgument("e", e);
-			ScriptManager.bindArgument("instance", thisInstance);
-			
-			ScriptManager.loadScript("scripts/platformer/collisionEvent_handling.js");
-			
-			ScriptManager.invokeFunction("handle", true);
-			
-			ScriptManager.clearBindings();
-		}
-		
-		private void handle(InputEvent e)
-		{
-			ScriptManager.bindArgument("objectMap", objectMap);
-			ScriptManager.bindArgument("e", e);
-			ScriptManager.bindArgument("replayManager", replayManager);
-			
-			ScriptManager.loadScript("scripts/platformer/inputEvent_handling.js");
-			
-			ScriptManager.invokeFunction("handle", true);
-			
-			ScriptManager.clearBindings();
-
-		}
-		
-		private void handle(DeathEvent e)
-		{
-			ScriptManager.bindArgument("objectMap", objectMap);
-			ScriptManager.bindArgument("e", e);
-			ScriptManager.bindArgument("instance", thisInstance);
-			
-			ScriptManager.loadScript("scripts/platformer/deathEvent_handling.js");
-			
-			ScriptManager.invokeFunction("handle", true);
-			
-			ScriptManager.clearBindings();
-		}
-		
-		private void handle(SpawnEvent e)
-		{
-			ScriptManager.bindArgument("objectMap", objectMap);
-			ScriptManager.bindArgument("e", e);
-			ScriptManager.bindArgument("instance", thisInstance);
-			
-			ScriptManager.loadScript("scripts/platformer/spawnEvent_handling.js");
-			
-			ScriptManager.invokeFunction("handle", true);
-			
-			ScriptManager.clearBindings();
-		}
-		
-		private void handle(DespawnEvent e)
-		{
-			ScriptManager.bindArgument("objectMap", objectMap);
-			ScriptManager.bindArgument("e", e);
-			ScriptManager.bindArgument("instance", thisInstance);
-			
-			ScriptManager.loadScript("scripts/platformer/despawnEvent_handling.js");
-			
-			ScriptManager.invokeFunction("handle", true);
-			
-			ScriptManager.clearBindings();
-		}
-		
-		private void handleFromQueue(long cTime, ConcurrentLinkedQueue<GameEvent> queue)
-		{
-			while(queue.peek() != null && (queue.peek().getTimeStamp() <= cTime))
-			{
-				replayHandle(queue.poll());
 			}
 		}
 		
@@ -435,13 +417,187 @@ public abstract class GameInstance extends PApplet
 			}
 		}
 		
-		public void playReplay(long fps)
+		private class RStartThread extends Thread
 		{
-			if (replay != null && replay.isComplete() && !playing)
+			public void run()
 			{
-				this.fps = fps;
+				pauseExeAndTime();
 				
-				new ReplayLogicThread().start();
+				recording = true;
+				
+				replay = new GameReplay(objectMap, eventManager, currentTime);
+				
+				resumeExeAndTime();
+			}
+		}
+		
+		private class RStopThread extends Thread
+		{
+			public void run()
+			{
+				pauseExeAndTime();
+				
+				replay.stopRecording(currentTime);
+				
+				recording = false;
+				
+				resumeExeAndTime();
+			}
+		}
+	}
+
+	protected class CoreEventHandler implements EventHandler
+	{
+		@Override
+		public void handleEvent(GameEvent e)
+		{
+			//System.out.println(e.getEventType());
+			
+			switch (e.getEventType())
+			{
+				case "CollisionEvent":
+				{
+					handle((CollisionEvent) e);
+					break;
+				}
+				case "InputEvent":
+				{
+					handle((InputEvent) e);
+					break;
+				}
+				case "DeathEvent":
+				{
+					handle((DeathEvent) e);
+					break;
+				}
+				case "SpawnEvent":
+				{
+					handle((SpawnEvent) e);
+					break;
+				}
+				case "DespawnEvent":
+				{
+					handle((DespawnEvent) e);
+					break;
+				}
+				default:
+					break;
+			}
+		}
+		
+		private void handle(CollisionEvent e)
+		{
+			ScriptManager.bindArgument("objectMap", objectMap);
+			ScriptManager.bindArgument("e", e);
+			ScriptManager.bindArgument("instance", thisInstance);
+			
+			ScriptManager.loadScript("scripts/platformer/collisionEvent_handling.js");
+			
+			ScriptManager.invokeFunction("handle", false);
+			
+			ScriptManager.clearBindings();
+		}
+		
+		private void handle(InputEvent e)
+		{
+			ScriptManager.bindArgument("objectMap", objectMap);
+			ScriptManager.bindArgument("e", e);
+			ScriptManager.bindArgument("replayManager", replayManager);
+			
+			ScriptManager.loadScript("scripts/platformer/inputEvent_handling.js");
+			
+			ScriptManager.invokeFunction("handle", false);
+			
+			ScriptManager.clearBindings();
+		}
+		
+		private void handle(DeathEvent e)
+		{
+			ScriptManager.bindArgument("objectMap", objectMap);
+			ScriptManager.bindArgument("e", e);
+			ScriptManager.bindArgument("instance", thisInstance);
+			
+			ScriptManager.loadScript("scripts/platformer/deathEvent_handling.js");
+			
+			ScriptManager.invokeFunction("handle", false);
+			
+			ScriptManager.clearBindings();
+		}
+		
+		private void handle(SpawnEvent e)
+		{
+			ScriptManager.bindArgument("objectMap", objectMap);
+			ScriptManager.bindArgument("e", e);
+			ScriptManager.bindArgument("instance", thisInstance);
+			
+			ScriptManager.loadScript("scripts/platformer/spawnEvent_handling.js");
+			
+			ScriptManager.invokeFunction("handle", false);
+			
+			ScriptManager.clearBindings();
+		}
+		
+		private void handle(DespawnEvent e)
+		{
+			ScriptManager.bindArgument("objectMap", objectMap);
+			ScriptManager.bindArgument("e", e);
+			ScriptManager.bindArgument("instance", thisInstance);
+			
+			ScriptManager.loadScript("scripts/platformer/despawnEvent_handling.js");
+			
+			ScriptManager.invokeFunction("handle", false);
+			
+			ScriptManager.clearBindings();
+		}
+	}
+
+	protected class CoreLogicThread extends Thread
+	{
+		public void run()
+		{
+			while(true)
+			{
+				long newTime = gameTimeline.getTime();
+				
+				while(newTime > currentTime)
+				{
+					exeLock.readLock().lock();
+					
+					NullEvent n = new NullEvent(currentTime, instanceID);
+					queueEvent(n, true);
+					
+					exeLock.readLock().unlock();
+					
+					boolean handled = false;
+					
+					while (!handled)
+					{
+						exeLock.readLock().lock();
+						
+						handled = eventManager.handleEvents(currentTime);
+						
+						exeLock.readLock().unlock();
+					}
+					
+					exeLock.readLock().lock();
+					
+					currentTime++;
+					
+					for (GameObject moveObject : objectMap.getObjectsOfClass(PhysicsObject.class))
+					{
+						if (!(moveObject instanceof PlayerObject))
+						{
+							((PhysicsObject) moveObject).doPhysics(thisInstance);
+						}
+						else if (((PlayerObject) moveObject).isAlive())
+						{
+							((PlayerObject) moveObject).doPhysics(thisInstance);
+						}
+					}
+					
+					exeLock.readLock().unlock();
+				}
+				
 			}
 		}
 	}

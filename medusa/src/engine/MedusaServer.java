@@ -8,21 +8,16 @@ import java.net.Socket;
 import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.UUID;
-import engine.gameEvents.CollisionEvent;
-import engine.gameEvents.DeathEvent;
 import engine.gameEvents.DespawnEvent;
 import engine.gameEvents.GameEvent;
 import engine.gameEvents.InputEvent;
 import engine.gameEvents.NullEvent;
 import engine.gameEvents.SpawnEvent;
-import engine.gameEvents.eventManagement.EventHandler;
 import engine.gameObjects.Block;
 import engine.gameObjects.DeathZone;
-import engine.gameObjects.GameObject;
 import engine.gameObjects.HorizontalMovingBlock;
 import engine.gameObjects.PlayerObject;
 import engine.gameObjects.SpawnPoint;
-import engine.gameObjects.objectClasses.PhysicsObject;
 import engine.network.NetworkHandler;
 import engine.network.messages.ClientDisconnectMessage;
 import engine.network.messages.GameEventMessage;
@@ -38,111 +33,6 @@ import processing.core.PApplet;
 public class MedusaServer extends GameInstance
 {
 	public static final boolean DEBUG = GameInstance.DEBUG;
-	
-	private class ServerEventHandler implements EventHandler
-	{
-		@Override
-		public void handleEvent(GameEvent e)
-		{
-			//System.out.println(e.getEventType());
-			
-			switch (e.getEventType())
-			{
-				case "CollisionEvent":
-				{
-					handle((CollisionEvent) e);
-					break;
-				}
-				case "InputEvent":
-				{
-					handle((InputEvent) e);
-					break;
-				}
-				case "DeathEvent":
-				{
-					handle((DeathEvent) e);
-					break;
-				}
-				case "SpawnEvent":
-				{
-					handle((SpawnEvent) e);
-					break;
-				}
-				case "DespawnEvent":
-				{
-					handle((DespawnEvent) e);
-					break;
-				}
-				default:
-					break;
-			}
-		}
-		
-		private void handle(CollisionEvent e)
-		{
-			ScriptManager.bindArgument("objectMap", objectMap);
-			ScriptManager.bindArgument("e", e);
-			ScriptManager.bindArgument("instance", thisInstance);
-			
-			ScriptManager.loadScript("scripts/platformer/collisionEvent_handling.js");
-			
-			ScriptManager.invokeFunction("handle", false);
-			
-			ScriptManager.clearBindings();
-		}
-		
-		private void handle(InputEvent e)
-		{
-			ScriptManager.bindArgument("objectMap", objectMap);
-			ScriptManager.bindArgument("e", e);
-			ScriptManager.bindArgument("replayManager", replayManager);
-			
-			ScriptManager.loadScript("scripts/platformer/inputEvent_handling.js");
-			
-			ScriptManager.invokeFunction("handle", false);
-			
-			ScriptManager.clearBindings();
-		}
-		
-		private void handle(DeathEvent e)
-		{
-			ScriptManager.bindArgument("objectMap", objectMap);
-			ScriptManager.bindArgument("e", e);
-			ScriptManager.bindArgument("instance", thisInstance);
-			
-			ScriptManager.loadScript("scripts/platformer/deathEvent_handling.js");
-			
-			ScriptManager.invokeFunction("handle", false);
-			
-			ScriptManager.clearBindings();
-		}
-		
-		private void handle(SpawnEvent e)
-		{
-			ScriptManager.bindArgument("objectMap", objectMap);
-			ScriptManager.bindArgument("e", e);
-			ScriptManager.bindArgument("instance", thisInstance);
-			
-			ScriptManager.loadScript("scripts/platformer/spawnEvent_handling.js");
-			
-			ScriptManager.invokeFunction("handle", false);
-			
-			ScriptManager.clearBindings();
-		}
-		
-		private void handle(DespawnEvent e)
-		{
-			ScriptManager.bindArgument("objectMap", objectMap);
-			ScriptManager.bindArgument("e", e);
-			ScriptManager.bindArgument("instance", thisInstance);
-			
-			ScriptManager.loadScript("scripts/platformer/despawnEvent_handling.js");
-			
-			ScriptManager.invokeFunction("handle", false);
-			
-			ScriptManager.clearBindings();
-		}
-	}
 	
 	@Override
 	public void queueEvent(GameEvent e, boolean propagate)
@@ -168,21 +58,19 @@ public class MedusaServer extends GameInstance
 		exeLock.readLock().unlock();
 	}
 	
-	private ServerLogicThread serverLogicThread = new ServerLogicThread(this);
+	private ServerLogicThread serverLogicThread = new ServerLogicThread();
 	
 	/**
 	 * The thread which handles the game logic loop
 	 * 
 	 * @author Jordan Neal
 	 */
-	private class ServerLogicThread extends Thread
+	private class ServerLogicThread extends CoreLogicThread
 	{
-		GameInstance gameInstance;
 		
-		public ServerLogicThread(GameInstance instance)
+		public ServerLogicThread()
 		{
 			this.setName("Server Logic Thread");
-			this.gameInstance = instance;
 		}
 		
 		public void run()
@@ -190,50 +78,8 @@ public class MedusaServer extends GameInstance
 			System.out.println("Server's id is: " + instanceID);
 			
 			currentTime = gameTimeline.getTime();
-			while(true)
-			{
-				long newTime = gameTimeline.getTime();
-				
-				while(newTime > currentTime)
-				{
-					exeLock.readLock().lock();
-					
-					NullEvent n = new NullEvent(currentTime, instanceID);
-					queueEvent(n, true);
-					
-					exeLock.readLock().unlock();
-					
-					boolean handled = false;
-					
-					while (!handled)
-					{
-						exeLock.readLock().lock();
-						
-						handled = eventManager.handleEvents(currentTime);
-						
-						exeLock.readLock().unlock();
-					}
-					
-					exeLock.readLock().lock();
-					
-					currentTime++;
-					
-					for (GameObject moveObject : objectMap.getObjectsOfClass(PhysicsObject.class))
-					{
-						if (!(moveObject instanceof PlayerObject))
-						{
-							((PhysicsObject) moveObject).doPhysics(gameInstance);
-						}
-						else if (((PlayerObject) moveObject).isAlive())
-						{
-							((PlayerObject) moveObject).doPhysics(gameInstance);
-						}
-					}
-					
-					exeLock.readLock().unlock();
-				}
-				
-			}
+			
+			super.run();
 		}
 	}
 	
@@ -536,7 +382,7 @@ public class MedusaServer extends GameInstance
 		
 		setUpGameObjects();
 		
-		eventManager.registerHandler(new ServerEventHandler(), new String[ ] {
+		eventManager.registerHandler(new CoreEventHandler(), new String[ ] {
 				"CollisionEvent", "InputEvent", "DeathEvent", "SpawnEvent", "DespawnEvent" });
 		
 		eventManager.addQueue(instanceID);

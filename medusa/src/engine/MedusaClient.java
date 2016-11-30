@@ -9,18 +9,13 @@ import java.util.HashMap;
 import java.util.Scanner;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-import engine.gameEvents.CollisionEvent;
-import engine.gameEvents.DeathEvent;
 import engine.gameEvents.DespawnEvent;
 import engine.gameEvents.GameEvent;
 import engine.gameEvents.InputEvent;
-import engine.gameEvents.NullEvent;
 import engine.gameEvents.SpawnEvent;
-import engine.gameEvents.eventManagement.EventHandler;
 import engine.gameEvents.eventManagement.EventQueue;
 import engine.gameObjects.GameObject;
 import engine.gameObjects.PlayerObject;
-import engine.gameObjects.objectClasses.PhysicsObject;
 import engine.network.NetworkHandler;
 import engine.network.messages.ClientDisconnectMessage;
 import engine.network.messages.GameEventMessage;
@@ -41,109 +36,6 @@ public class MedusaClient extends GameInstance
 	/** This game client's PlayerObject */
 	private PlayerObject playerObject;
 	
-	private class ClientEventHandler implements EventHandler
-	{
-		@Override
-		public void handleEvent(GameEvent e)
-		{
-			switch (e.getEventType())
-			{
-				case "CollisionEvent":
-				{
-					handle((CollisionEvent) e);
-					break;
-				}
-				case "InputEvent":
-				{
-					handle((InputEvent) e);
-					break;
-				}
-				case "DeathEvent":
-				{
-					handle((DeathEvent) e);
-					break;
-				}
-				case "SpawnEvent":
-				{
-					handle((SpawnEvent) e);
-					break;
-				}
-				case "DespawnEvent":
-				{
-					handle((DespawnEvent) e);
-					break;
-				}
-				default:
-					break;
-			}
-		}
-		
-		private void handle(CollisionEvent e)
-		{
-			ScriptManager.bindArgument("objectMap", objectMap);
-			ScriptManager.bindArgument("e", e);
-			ScriptManager.bindArgument("instance", thisInstance);
-			
-			ScriptManager.loadScript("scripts/platformer/collisionEvent_handling.js");
-			
-			ScriptManager.invokeFunction("handle", false);
-			
-			ScriptManager.clearBindings();
-		}
-		
-		private void handle(InputEvent e)
-		{
-			ScriptManager.bindArgument("objectMap", objectMap);
-			ScriptManager.bindArgument("e", e);
-			ScriptManager.bindArgument("instance", thisInstance);
-			
-			ScriptManager.loadScript("scripts/platformer/inputEvent_handling.js");
-			
-			ScriptManager.invokeFunction("handle", false);
-			
-			ScriptManager.clearBindings();
-		}
-		
-		private void handle(DeathEvent e)
-		{
-			ScriptManager.bindArgument("objectMap", objectMap);
-			ScriptManager.bindArgument("e", e);
-			ScriptManager.bindArgument("instance", thisInstance);
-			
-			ScriptManager.loadScript("scripts/platformer/deathEvent_handling.js");
-			
-			ScriptManager.invokeFunction("handle", false);
-			
-			ScriptManager.clearBindings();
-		}
-		
-		private void handle(SpawnEvent e)
-		{
-			ScriptManager.bindArgument("objectMap", objectMap);
-			ScriptManager.bindArgument("e", e);
-			ScriptManager.bindArgument("instance", thisInstance);
-			
-			ScriptManager.loadScript("scripts/platformer/spawnEvent_handling.js");
-			
-			ScriptManager.invokeFunction("handle", false);
-			
-			ScriptManager.clearBindings();
-		}
-		
-		private void handle(DespawnEvent e)
-		{
-			ScriptManager.bindArgument("objectMap", objectMap);
-			ScriptManager.bindArgument("e", e);
-			ScriptManager.bindArgument("instance", thisInstance);
-			
-			ScriptManager.loadScript("scripts/platformer/despawnEvent_handling.js");
-			
-			ScriptManager.invokeFunction("handle", false);
-			
-			ScriptManager.clearBindings();
-		}
-	}
-	
 	@Override
 	public void queueEvent(GameEvent e, boolean propagate)
 	{
@@ -155,58 +47,26 @@ public class MedusaClient extends GameInstance
 			serverHandler.queueMessage(new GameEventMessage(e));
 	}
 	
-	private ClientLogicThread clientLogicThread = new ClientLogicThread(this);
+	private ClientLogicThread clientLogicThread = new ClientLogicThread();
 	
 	/**
 	 * The thread which handles the game logic loop
 	 * 
 	 * @author Jordan Neal
 	 */
-	private class ClientLogicThread extends Thread
+	private class ClientLogicThread extends CoreLogicThread
 	{
-		GameInstance gameInstance;
 		
-		public ClientLogicThread(GameInstance instance)
+		public ClientLogicThread()
 		{
 			this.setName("Client Logic Thread");
-			this.gameInstance = instance;
 		}
 		
 		public void run()
 		{
 			System.out.println("Client's id is: " + instanceID);
 			
-			while(true)
-			{
-				long newTime = gameTimeline.getTime();
-				
-				while(newTime > currentTime)
-				{
-					NullEvent n = new NullEvent(currentTime, instanceID);
-					queueEvent(n, true);
-					
-					boolean handled = false;
-					
-					while (!handled)
-					{
-						handled = eventManager.handleEvents(currentTime);
-					}
-					
-					currentTime++;
-					
-					for (GameObject moveObject : objectMap.getObjectsOfClass(PhysicsObject.class))
-					{
-						if (!(moveObject instanceof PlayerObject))
-						{
-							((PhysicsObject) moveObject).doPhysics(gameInstance);
-						}
-						else if (((PlayerObject) moveObject).isAlive())
-						{
-							((PlayerObject) moveObject).doPhysics(gameInstance);
-						}
-					}
-				}
-			}
+			super.run();
 		}
 	}
 	
@@ -367,7 +227,7 @@ public class MedusaClient extends GameInstance
 				}
 			}
 			
-			eventManager.registerHandler(new ClientEventHandler(), new String[ ] {
+			eventManager.registerHandler(new CoreEventHandler(), new String[ ] {
 					"CollisionEvent", "InputEvent", "DeathEvent", "SpawnEvent", "DespawnEvent" });
 			
 			eventManager.setGVT(serverGVT);
