@@ -1,6 +1,7 @@
 package engine.gameObjects;
 
 import engine.GameInstance;
+import engine.ScriptManager;
 import engine.gameObjects.objectClasses.PhysicsObject;
 
 public class HorizontalMovingBlock extends Block implements PhysicsObject
@@ -20,50 +21,39 @@ public class HorizontalMovingBlock extends Block implements PhysicsObject
 		height = 10;
 	}
 	
-	@Override
-	public synchronized void doPhysics(GameInstance parent)
+	private void exposeScriptingObjects(GameInstance instance)
 	{
-		hSpeed = movementSpeed * movementDirection;
+		ScriptManager.bindArgument("movementDirection", movementDirection);
+		ScriptManager.bindArgument("movementSpeed", movementSpeed);
+		ScriptManager.bindArgument("hSpeed", hSpeed);
+		ScriptManager.bindArgument("x", x);
+		ScriptManager.bindArgument("y", y);
+		ScriptManager.bindArgument("height", height);
+		ScriptManager.bindArgument("width", width);
 		
-		if (movementDirection > 0)
-		{
-			if ((parent.checkForPhysicalCollision(this.rightBorder() + hSpeed
-					+ 1, y, 1, height))
-					|| (x + hSpeed + width - 1) > GameInstance.SCREEN_WIDTH)
-			{
-				x = Math.round(x);
-				while((!parent.checkForPhysicalCollision(this.rightBorder()
-						+ movementDirection + 1, y, 1, height))
-						&& (x + movementDirection + width
-								- 1) < GameInstance.SCREEN_WIDTH)
-				{
-					x += movementDirection;
-				}
-				hSpeed = 0;
-				
-				movementDirection = -1;
-			}
-		}
-		else if (movementDirection < 0)
-		{
-			if ((parent.checkForPhysicalCollision(this.leftBorder() + hSpeed
-					- 1, y, 1, height))
-					|| (x + hSpeed - 1) < 0)
-			{
-				x = Math.round(x);
-				while((!parent.checkForPhysicalCollision(this.leftBorder()
-						+ movementDirection
-						- 1, y, 1, height)) && (x + movementDirection - 1) > 0)
-				{
-					x += movementDirection;
-				}
-				hSpeed = 0;
-				
-				movementDirection = 1;
-			}
-		}
-		
-		x += hSpeed;
+		// objects that will not have their values updated after running the script
+		ScriptManager.bindArgument("instance", instance);
+		ScriptManager.bindArgument("this", this);
+	}
+	
+	private void updateValues()
+	{
+		movementDirection = ((Number) ScriptManager.retrieveValue("movementDirection")).intValue();
+		movementSpeed = ((Number) ScriptManager.retrieveValue("movementSpeed")).floatValue();
+		hSpeed = ((Number) ScriptManager.retrieveValue("hSpeed")).floatValue();
+		x = ((Number) ScriptManager.retrieveValue("x")).floatValue();
+		y = ((Number) ScriptManager.retrieveValue("y")).floatValue();
+		height = ((Number) ScriptManager.retrieveValue("height")).floatValue();
+		width = ((Number) ScriptManager.retrieveValue("width")).floatValue();
+	}
+	
+	@Override
+	public synchronized void doPhysics(GameInstance instance)
+	{
+		exposeScriptingObjects(instance);
+		ScriptManager.loadScript("scripts/platformer/movingBlock_behaviour.js");
+		updateValues();
+		ScriptManager.clearBindings();
 	}
 
 	public int getMovementDirection()

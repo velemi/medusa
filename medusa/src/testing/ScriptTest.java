@@ -1,5 +1,6 @@
-package engine;
+package testing;
 
+import engine.ScriptManager;
 import engine.gameObjects.Block;
 import engine.gameObjects.HorizontalMovingBlock;
 import engine.gameObjects.SpawnPoint;
@@ -16,7 +17,7 @@ public class ScriptTest
 		ScriptManager.bindArgument("Block", Block.class);
 		ScriptManager.bindArgument("SpawnPoint", SpawnPoint.class);
 		
-		ScriptManager.loadScript("src/scripts/testScript.js");
+		ScriptManager.loadScript("scripts/testScript.js");
 	}
 	
 }

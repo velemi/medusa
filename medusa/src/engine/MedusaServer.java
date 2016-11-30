@@ -88,13 +88,13 @@ public class MedusaServer extends GameInstance
 			objects[1] = objectMap.getObject(e.getIDs()[1]);
 			
 			if ((objects[0] instanceof PlayerObject)
-					&& (objects[1] instanceof DeathZone)/*&& !replayManager.playing*/)
+					&& (objects[1] instanceof DeathZone))
 			{
 				queueEvent(new DeathEvent(e, e.getTimeStamp()
 						+ 1, getInstanceID(), objects[0].getID()), false);
 			}
 			else if ((objects[1] instanceof PlayerObject)
-					&& (objects[0] instanceof DeathZone) /*&& !replayManager.playing*/)
+					&& (objects[0] instanceof DeathZone))
 			{
 				queueEvent(new DeathEvent(e, e.getTimeStamp()
 						+ 1, getInstanceID(), objects[1].getID()), false);
@@ -188,7 +188,7 @@ public class MedusaServer extends GameInstance
 				((Killable) object).kill();
 				removeFromMap(object);
 				
-				if (object instanceof PlayerObject /*&& !replayManager.playing*/)
+				if (object instanceof PlayerObject)
 					queueEvent(new SpawnEvent(e, e.getTimeStamp()
 							+ PlayerObject.DEFAULT_RESPAWN, getInstanceID(), object), false);
 			}
@@ -445,13 +445,11 @@ public class MedusaServer extends GameInstance
 						
 						break;
 					}
-					case "ClientDisconnectMessage":		// does server ever actually get these messages?
+					case "ClientDisconnectMessage":	
 					{
 						UUID disconnectedClient = ((ClientDisconnectMessage) incomingMessage).getClientID();
 						
 						eventManager.removeQueue(disconnectedClient);
-						
-						//removeFromMap(objectMap.getPlayerObject(disconnectedClient));
 						eventManager.queueEvent(new DespawnEvent(currentTime, instanceID, 
 								objectMap.getPlayerObject(disconnectedClient)));
 						
@@ -516,15 +514,11 @@ public class MedusaServer extends GameInstance
 		
 		private void initClientTimeline() throws IOException
 		{
-			//System.out.println("sTime");
-			
 			networkOutput.writeLong(gameTimeline.getTime());
 		}
 		
 		private void initClientObjects() throws IOException
 		{
-			//System.out.println("sObjects");
-			
 			clientInstanceID = UUID.randomUUID();
 			
 			playerObject = createNewPlayer();
@@ -532,15 +526,11 @@ public class MedusaServer extends GameInstance
 			networkOutput.writeObject(playerObject);
 			
 			networkOutput.writeObject(objectMap.getFullMap());
-			
-			//addToMap(playerObject);
 			eventManager.queueEvent(new SpawnEvent(currentTime, instanceID, playerObject));
 		}
 		
 		private void initClientEvents() throws IOException
 		{
-			//System.out.println("sEvents");
-			
 			eventManager.addQueue(clientInstanceID);
 			NullEvent n = new NullEvent(currentTime, clientInstanceID);
 			
@@ -552,8 +542,6 @@ public class MedusaServer extends GameInstance
 		
 		protected void initDataTransactions()
 		{
-			//System.out.println("lock");
-			
 			exeLock.writeLock().lock();
 			
 			System.out.println("Accepted new client");
@@ -615,8 +603,6 @@ public class MedusaServer extends GameInstance
 		addToMap(new HorizontalMovingBlock(400, 500));
 		addToMap(new HorizontalMovingBlock(320, 187));
 		addToMap(new HorizontalMovingBlock(100, 500));
-		
-		//addToMap(new TestLine(40, 20));
 	}
 	
 	@Override
@@ -625,8 +611,6 @@ public class MedusaServer extends GameInstance
 		instanceID = UUID.randomUUID();
 		
 		setUpGameObjects();
-		
-		//replayManager = new ReplayManager(this);
 		
 		eventManager.registerHandler(new ServerEventHandler(), new String[ ] {
 				"CollisionEvent", "InputEvent", "DeathEvent", "SpawnEvent", "DespawnEvent" });

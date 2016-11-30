@@ -89,13 +89,13 @@ public class MedusaClient extends GameInstance
 			objects[1] = objectMap.getObject(e.getIDs()[1]);
 			
 			if ((objects[0] instanceof PlayerObject)
-					&& (objects[1] instanceof DeathZone) /*&& !replayManager.playing*/)
+					&& (objects[1] instanceof DeathZone))
 			{
 				queueEvent(new DeathEvent(e, e.getTimeStamp()
 						+ 1, getInstanceID(), objects[0].getID()), false);
 			}
 			else if ((objects[1] instanceof PlayerObject)
-					&& (objects[0] instanceof DeathZone) /*&& !replayManager.playing*/)
+					&& (objects[0] instanceof DeathZone))
 			{
 				queueEvent(new DeathEvent(e, e.getTimeStamp()
 						+ 1, getInstanceID(), objects[1].getID()), false);
@@ -189,7 +189,7 @@ public class MedusaClient extends GameInstance
 				((Killable) object).kill();
 				removeFromMap(object);
 				
-				if (object instanceof PlayerObject /*&& !replayManager.playing*/)
+				if (object instanceof PlayerObject)
 					queueEvent(new SpawnEvent(e, e.getTimeStamp()
 							+ PlayerObject.DEFAULT_RESPAWN, getInstanceID(), object), false);
 			}

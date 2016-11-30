@@ -1,10 +1,8 @@
 package engine.gameObjects;
 
-import java.util.ArrayList;
 import java.util.UUID;
 import engine.GameInstance;
 import engine.ScriptManager;
-import engine.gameEvents.CollisionEvent;
 import engine.gameObjects.objectClasses.Killable;
 import engine.gameObjects.objectClasses.PhysicsObject;
 import engine.gameObjects.objectClasses.RenderableObject;
@@ -185,102 +183,6 @@ public class PlayerObject
 		this.jumpPressed = jumpPressed;
 	}
 	
-	/**
-	 * Checks to see if this PlayerObject is about to collide with any other
-	 * game objects, and acts accordingly.
-	 */
-	@SuppressWarnings("unused")
-	private void avoidPhysicalCollisions(GameInstance instance)
-	{
-		ArrayList<GameObject> standingOn = instance.getPhysicalCollisions(x, this.bottomBorder()
-				+ 1, width, 1);
-				
-		if (!standingOn.isEmpty())
-		{
-			for (int i = 0; i < standingOn.size(); i++)
-			{
-				GameObject floor = standingOn.get(i);
-				if (floor instanceof HorizontalMovingBlock)
-				{
-					this.hSpeed += ((HorizontalMovingBlock) floor).movementSpeed
-							* ((HorizontalMovingBlock) floor).movementDirection;
-				}
-			}
-		}
-		
-		// horizontal collision
-		if (movementDirection > 0)
-		{
-			if (instance.checkForPhysicalCollision(this.rightBorder()
-					+ hSpeed, y, 1, height))
-			{
-				// x = Math.round(x);
-				while(!instance.checkForPhysicalCollision(this.rightBorder()
-						+ movementDirection, y, 1, height))
-				{
-					x += movementDirection;
-				}
-				hSpeed = 0;
-			}
-		}
-		else if (movementDirection < 0)
-		{
-			if (instance.checkForPhysicalCollision(this.leftBorder() + hSpeed
-					- 1, y, 1, height))
-			{
-				// x = Math.round(x);
-				while(!instance.checkForPhysicalCollision(this.leftBorder()
-						+ movementDirection
-						- 1, y, 1, height))
-				{
-					x += movementDirection;
-				}
-				hSpeed = 0;
-			}
-		}
-		
-		int vDirection = (int) Math.signum(vSpeed);
-		// vertical collision
-		if (vDirection > 0)
-		{
-			if (instance.checkForPhysicalCollision(x, this.bottomBorder()
-					+ vSpeed, width, 1))
-			{
-				// y = Math.round(y);
-				while(!instance.checkForPhysicalCollision(x, this.bottomBorder()
-						+ vDirection, width, 1))
-				{
-					y += vDirection;
-				}
-				vSpeed = 0;
-			}
-		}
-		else if (vDirection < 0)
-		{
-			if (instance.checkForPhysicalCollision(x, this.topBorder() + vSpeed
-					- 1, width, 1))
-			{
-				// y = Math.round(y);
-				while(!instance.checkForPhysicalCollision(x, this.topBorder()
-						+ vDirection - 1, width, 1))
-				{
-					y += vDirection;
-				}
-				vSpeed = 0;
-			}
-		}
-		
-	}
-	
-	private synchronized void handleNonPhysicalCollisions(GameInstance instance)
-	{
-		for (GameObject e : instance.getColliding(this))
-		{
-			instance.queueEvent(new CollisionEvent(instance.getCurrentTime() + 1,
-							parentInstanceID, this.getID(), e.getID()), false);
-		}
-	}
-	
 	private void exposeScriptingObjects(GameInstance instance)
 	{
 		ScriptManager.bindArgument("movementDirection", movementDirection);
@@ -299,12 +201,12 @@ public class PlayerObject
 		ScriptManager.bindArgument("height", height);
 		ScriptManager.bindArgument("width", width);
 		
+		// objects that will not have their values updated after running the script
 		ScriptManager.bindArgument("instance", instance);
-		
-		//ScriptManager.bindArgument("HorizontalMovingBlock", HorizontalMovingBlock.class);
+		ScriptManager.bindArgument("player", this);
 	}
 	
-	private void updateVariables()
+	private void updateValues()
 	{
 		movementDirection = ((Number) ScriptManager.retrieveValue("movementDirection")).intValue();
 		leftPressed = (boolean) ScriptManager.retrieveValue("leftPressed");
@@ -327,11 +229,9 @@ public class PlayerObject
 	public synchronized void doPhysics(GameInstance instance)
 	{
 		exposeScriptingObjects(instance);
-		ScriptManager.loadScript("src/scripts/player_behaviour.js");
-		updateVariables();
+		ScriptManager.loadScript("scripts/platformer/player_behaviour.js");
+		updateValues();
 		ScriptManager.clearBindings();
-		
-		handleNonPhysicalCollisions(instance);
 	}
 	
 	public static PlayerObject createNew()

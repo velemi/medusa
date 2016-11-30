@@ -1,14 +1,9 @@
-//print(movementDirection);
-//print(leftPressed);
-
 movementDirection = 0;
 
 if (leftPressed)
 	movementDirection -= 1;
 if (rightPressed)
 	movementDirection += 1;
-
-//print(movementDirection);
 
 hSpeed = movementSpeed * movementDirection;
 
@@ -104,9 +99,17 @@ else if (vDirection < 0)
 	}
 }
 
-//print(x + "\n");
-
 x = x + hSpeed;
 y += vSpeed;
 
-//print(x + '\n');
+// handle Non-Physical collisions
+colliding = instance.getColliding(player);
+
+CollisionEvent = Java.type("engine.gameEvents.CollisionEvent");
+
+for (i = 0; i < colliding.size(); i++) {
+	e = colliding.get(i);
+	
+	instance.queueEvent(new CollisionEvent(instance.getCurrentTime() + 1,
+							player.parentInstanceID, player.getID(), e.getID()), false);
+}

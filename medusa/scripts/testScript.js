@@ -9,3 +9,7 @@ if (h.isType(Block)) {
 if (!h.isType(SpawnPoint)) {
 	print("Success");
 }
+
+GameInstance = Java.type("engine.GameInstance");
+
+print(GameInstance.SCREEN_WIDTH);
