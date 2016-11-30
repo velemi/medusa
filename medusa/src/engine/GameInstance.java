@@ -41,6 +41,8 @@ public abstract class GameInstance extends PApplet
 	/** The port number to be used by the server */
 	public static final int SERVER_PORT = 7734;
 	
+	protected GameInstance thisInstance = this;
+	
 	protected ReentrantReadWriteLock exeLock = new ReentrantReadWriteLock(true);
 	
 	public ReplayManager replayManager = new ReplayManager(this);
@@ -195,7 +197,7 @@ public abstract class GameInstance extends PApplet
 		return currentTime;
 	}
 	
-	protected class ReplayManager
+	public class ReplayManager
 	{
 		private GameReplay replay = null;
 		
@@ -305,90 +307,68 @@ public abstract class GameInstance extends PApplet
 		
 		private void handle(CollisionEvent e)
 		{
-			GameObject[] objects = new GameObject[2];
+			ScriptManager.bindArgument("objectMap", objectMap);
+			ScriptManager.bindArgument("e", e);
+			ScriptManager.bindArgument("instance", thisInstance);
 			
-			objects[0] = rObjects.getObject(e.getIDs()[0]);
-			objects[1] = rObjects.getObject(e.getIDs()[1]);
+			ScriptManager.loadScript("scripts/platformer/collisionEvent_handling.js");
+			
+			ScriptManager.invokeFunction("handle", true);
+			
+			ScriptManager.clearBindings();
 		}
 		
 		private void handle(InputEvent e)
 		{
-			PlayerObject p = rObjects.getPlayerObject(e.getInstanceID());
+			ScriptManager.bindArgument("objectMap", objectMap);
+			ScriptManager.bindArgument("e", e);
+			ScriptManager.bindArgument("replayManager", replayManager);
 			
-			if (p != null)
-			{
-				switch (e.getInput())
-				{
-					case "LEFT PRESSED":
-					{
-						p.setLeftPressed(true);
-						break;
-					}
-					case "RIGHT PRESSED":
-					{
-						p.setRightPressed(true);
-						break;
-					}
-					case "JUMP PRESSED":
-					{
-						p.setJumpPressed(true);
-						break;
-					}
-					case "LEFT RELEASED":
-					{
-						p.setLeftPressed(false);
-						break;
-					}
-					case "RIGHT RELEASED":
-					{
-						p.setRightPressed(false);
-						break;
-					}
-					case "JUMP RELEASED":
-					{
-						p.setJumpPressed(false);
-						break;
-					}
-					default:
-						break;
-				}
-			}
+			ScriptManager.loadScript("scripts/platformer/inputEvent_handling.js");
+			
+			ScriptManager.invokeFunction("handle", true);
+			
+			ScriptManager.clearBindings();
+
 		}
 		
 		private void handle(DeathEvent e)
 		{
-			GameObject object = rObjects.getObject(e.getObjectID());
+			ScriptManager.bindArgument("objectMap", objectMap);
+			ScriptManager.bindArgument("e", e);
+			ScriptManager.bindArgument("instance", thisInstance);
 			
-			if (object instanceof Killable)
-			{
-				((Killable) object).kill();
-				removeFromMap(object);
-			}
+			ScriptManager.loadScript("scripts/platformer/deathEvent_handling.js");
+			
+			ScriptManager.invokeFunction("handle", true);
+			
+			ScriptManager.clearBindings();
 		}
 		
 		private void handle(SpawnEvent e)
 		{
-			GameObject object = e.getObject();
+			ScriptManager.bindArgument("objectMap", objectMap);
+			ScriptManager.bindArgument("e", e);
+			ScriptManager.bindArgument("instance", thisInstance);
 			
-			if (object instanceof Spawnable)
-			{
-				((Spawnable) object).spawn();
-				
-				if (!rObjects.contains(object))
-				{
-					rObjects.addToSet(object);
-				}
-			}
+			ScriptManager.loadScript("scripts/platformer/spawnEvent_handling.js");
+			
+			ScriptManager.invokeFunction("handle", true);
+			
+			ScriptManager.clearBindings();
 		}
 		
 		private void handle(DespawnEvent e)
 		{
-			GameObject object = e.getObject();
+			ScriptManager.bindArgument("objectMap", objectMap);
+			ScriptManager.bindArgument("e", e);
+			ScriptManager.bindArgument("instance", thisInstance);
 			
-			if (rObjects.contains(object))
-			{
-				rObjects.removeFromSet(object);
-			}
+			ScriptManager.loadScript("scripts/platformer/despawnEvent_handling.js");
+			
+			ScriptManager.invokeFunction("handle", true);
+			
+			ScriptManager.clearBindings();
 		}
 		
 		private void handleFromQueue(long cTime, ConcurrentLinkedQueue<GameEvent> queue)

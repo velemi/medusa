@@ -22,9 +22,7 @@ import engine.gameObjects.GameObject;
 import engine.gameObjects.HorizontalMovingBlock;
 import engine.gameObjects.PlayerObject;
 import engine.gameObjects.SpawnPoint;
-import engine.gameObjects.objectClasses.Killable;
 import engine.gameObjects.objectClasses.PhysicsObject;
-import engine.gameObjects.objectClasses.Spawnable;
 import engine.network.NetworkHandler;
 import engine.network.messages.ClientDisconnectMessage;
 import engine.network.messages.GameEventMessage;
@@ -82,141 +80,67 @@ public class MedusaServer extends GameInstance
 		
 		private void handle(CollisionEvent e)
 		{
-			GameObject[] objects = new GameObject[2];
+			ScriptManager.bindArgument("objectMap", objectMap);
+			ScriptManager.bindArgument("e", e);
+			ScriptManager.bindArgument("instance", thisInstance);
 			
-			objects[0] = objectMap.getObject(e.getIDs()[0]);
-			objects[1] = objectMap.getObject(e.getIDs()[1]);
+			ScriptManager.loadScript("scripts/platformer/collisionEvent_handling.js");
 			
-			if ((objects[0] instanceof PlayerObject)
-					&& (objects[1] instanceof DeathZone))
-			{
-				queueEvent(new DeathEvent(e, e.getTimeStamp()
-						+ 1, getInstanceID(), objects[0].getID()), false);
-			}
-			else if ((objects[1] instanceof PlayerObject)
-					&& (objects[0] instanceof DeathZone))
-			{
-				queueEvent(new DeathEvent(e, e.getTimeStamp()
-						+ 1, getInstanceID(), objects[1].getID()), false);
-			}
+			ScriptManager.invokeFunction("handle", false);
+			
+			ScriptManager.clearBindings();
 		}
 		
 		private void handle(InputEvent e)
 		{
-			PlayerObject p = objectMap.getPlayerObject(e.getInstanceID());
+			ScriptManager.bindArgument("objectMap", objectMap);
+			ScriptManager.bindArgument("e", e);
+			ScriptManager.bindArgument("replayManager", replayManager);
 			
-			if (p != null)
-			{
-				switch (e.getInput())
-				{
-					case "LEFT PRESSED":
-					{
-						p.setLeftPressed(true);
-						break;
-					}
-					case "RIGHT PRESSED":
-					{
-						p.setRightPressed(true);
-						break;
-					}
-					case "JUMP PRESSED":
-					{
-						p.setJumpPressed(true);
-						break;
-					}
-					case "LEFT RELEASED":
-					{
-						p.setLeftPressed(false);
-						break;
-					}
-					case "RIGHT RELEASED":
-					{
-						p.setRightPressed(false);
-						break;
-					}
-					case "JUMP RELEASED":
-					{
-						p.setJumpPressed(false);
-						break;
-					}
-					default:
-						break;
-				}
-			}
-			else
-			{
-				switch(e.getInput())
-				{
-
-					case "START RECORD":
-					{
-						replayManager.startRecording();
-						break;
-					}
-					case "STOP RECORD":
-					{
-						replayManager.stopRecording();
-						break;
-					}
-					case "PLAYBACK60":
-					{
-						replayManager.playReplay(60);
-						break;
-					}
-					case "PLAYBACK30":
-					{
-						replayManager.playReplay(30);
-						break;
-					}
-					case "PLAYBACK120":
-					{
-						replayManager.playReplay(120);
-						break;
-					}
-					default:
-						break;
-				}
-			}
+			ScriptManager.loadScript("scripts/platformer/inputEvent_handling.js");
+			
+			ScriptManager.invokeFunction("handle", false);
+			
+			ScriptManager.clearBindings();
 		}
 		
 		private void handle(DeathEvent e)
 		{
-			GameObject object = objectMap.getObject(e.getObjectID());
+			ScriptManager.bindArgument("objectMap", objectMap);
+			ScriptManager.bindArgument("e", e);
+			ScriptManager.bindArgument("instance", thisInstance);
 			
-			if (object instanceof Killable)
-			{
-				((Killable) object).kill();
-				removeFromMap(object);
-				
-				if (object instanceof PlayerObject)
-					queueEvent(new SpawnEvent(e, e.getTimeStamp()
-							+ PlayerObject.DEFAULT_RESPAWN, getInstanceID(), object), false);
-			}
+			ScriptManager.loadScript("scripts/platformer/deathEvent_handling.js");
+			
+			ScriptManager.invokeFunction("handle", false);
+			
+			ScriptManager.clearBindings();
 		}
 		
 		private void handle(SpawnEvent e)
 		{
-			GameObject object = e.getObject();
+			ScriptManager.bindArgument("objectMap", objectMap);
+			ScriptManager.bindArgument("e", e);
+			ScriptManager.bindArgument("instance", thisInstance);
 			
-			if (object instanceof Spawnable)
-			{
-				((Spawnable) object).spawn();
-				
-				if (!objectMap.contains(object))
-				{
-					addToMap(object);
-				}
-			}
+			ScriptManager.loadScript("scripts/platformer/spawnEvent_handling.js");
+			
+			ScriptManager.invokeFunction("handle", false);
+			
+			ScriptManager.clearBindings();
 		}
 		
 		private void handle(DespawnEvent e)
 		{
-			GameObject object = e.getObject();
+			ScriptManager.bindArgument("objectMap", objectMap);
+			ScriptManager.bindArgument("e", e);
+			ScriptManager.bindArgument("instance", thisInstance);
 			
-			if (objectMap.contains(object))
-			{
-				removeFromMap(object);
-			}
+			ScriptManager.loadScript("scripts/platformer/despawnEvent_handling.js");
+			
+			ScriptManager.invokeFunction("handle", false);
+			
+			ScriptManager.clearBindings();
 		}
 	}
 	

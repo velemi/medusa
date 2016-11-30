@@ -229,7 +229,7 @@ public class PlayerObject
 	public synchronized void doPhysics(GameInstance instance)
 	{
 		exposeScriptingObjects(instance);
-		ScriptManager.loadScript("scripts/platformer/player_behaviour.js");
+		ScriptManager.loadScript("scripts/platformer/playerObject_behaviour.js");
 		updateValues();
 		ScriptManager.clearBindings();
 	}
