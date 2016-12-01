@@ -19,7 +19,7 @@ public class Invader extends GameObject implements PhysicsObject, RenderableObje
 	
 	private long thisLastTurned = turnTime;
 	
-	private static float movementDelay = 15;
+	private static float movementDelay = 25;
 	
 	private int movementDirection = 1;
 	
