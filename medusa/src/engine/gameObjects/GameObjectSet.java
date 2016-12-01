@@ -92,6 +92,17 @@ public class GameObjectSet implements Serializable
 		return r;
 	}
 	
+	public int getPlayerCount()
+	{
+		lock.readLock().lock();
+		
+		int r = playerObjects.size();
+		
+		lock.readLock().unlock();
+		
+		return r;
+	}
+	
 	public ArrayList<GameObject> getObjectsOfClass(Class<?> t)
 	{
 		lock.readLock().lock();

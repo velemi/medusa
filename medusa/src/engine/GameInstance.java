@@ -36,7 +36,7 @@ import processing.core.PApplet;
  */
 public abstract class GameInstance extends PApplet
 {
-	public static final boolean DEBUG = true;
+	public static final boolean DEBUG = false;
 	
 	public static final int TARGET_FRAMERATE = 60;
 	
@@ -87,6 +87,11 @@ public abstract class GameInstance extends PApplet
 			e.printStackTrace();
 			return null;
 		}
+	}
+	
+	public int getPlayerCount()
+	{
+		return objectMap.getPlayerCount();
 	}
 	
 	@SuppressWarnings("unchecked")
@@ -288,13 +293,17 @@ public abstract class GameInstance extends PApplet
 			}
 		}
 		
-		String logic = "   Logical Time: " + getCurrentTime();
-		String real =  "Game Time: " + gameTimeline.getTime();
+		long l = getCurrentTime();
+		long r = gameTimeline.getTime();
+		
+		String logic = "Logical Time: " + l;
+		String real =  "Game Time: " + l;
+		String off = "Time Offset: " + (r - l);
 		
 		fill(0,100,0);
 		stroke(0,100,0);
 		textSize(10);
-		text(real + logic, 5, SCREEN_HEIGHT - 5);
+		text(real + "   " + logic + "   " + off, 5, SCREEN_HEIGHT - 5);
 	}
 
 	public class ReplayManager
@@ -302,6 +311,8 @@ public abstract class GameInstance extends PApplet
 		private GameReplay replay = null;
 		
 		public GameObjectSet rObjects = null;
+		
+		private Timeline replayTimeline;
 		
 		private boolean recording = false;
 		
@@ -318,9 +329,24 @@ public abstract class GameInstance extends PApplet
 			gameInstance = i;
 		}
 		
+		public long getReplayTime()
+		{
+			if (replayTimeline != null)
+			{
+				return replayTimeline.getTime();
+			}
+			
+			return -1L;
+		}
+		
 		public boolean isPlaying()
 		{
 			return playing;
+		}
+		
+		public int getReplayPlayerCount()
+		{
+			return rObjects.getPlayerCount();
 		}
 		
 		public boolean isRecording()
@@ -402,7 +428,7 @@ public abstract class GameInstance extends PApplet
 		private void handle(InputEvent e)
 		{
 			ScriptManager.lock();
-			ScriptManager.bindArgument("objectMap", objectMap);
+			ScriptManager.bindArgument("objectMap", rObjects);
 			ScriptManager.bindArgument("e", e);
 			ScriptManager.bindArgument("replayManager", replayManager);
 			
@@ -496,7 +522,7 @@ public abstract class GameInstance extends PApplet
 				playing = true;
 				
 				// create replay timeline
-				Timeline replayTimeline = 
+				replayTimeline = 
 						new Timeline(replay.getStartTime(), 1000000000L / fps);
 				
 				rCurrentTime = replay.getStartTime();
@@ -638,7 +664,9 @@ public abstract class GameInstance extends PApplet
 			ScriptManager.clearBindings();
 			ScriptManager.unlock();
 			
-			h = h + "l:" + p.isLeftPressed() + ", r:" + p.isRightPressed() + ", j:" + p.isJumpPressed();
+			if (p != null)
+				h = h + "l:" + p.isLeftPressed() + ", r:" + p.isRightPressed() + ", j:" 
+						+ p.isJumpPressed();
 			
 			handledLog.add(h);
 		}

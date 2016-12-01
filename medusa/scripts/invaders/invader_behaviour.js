@@ -1,12 +1,22 @@
 GameInstance = Java.type("engine.GameInstance");
 
-cTime = instance.getCurrentTime();
+if (!instance.replayManager.isPlaying())
+{
+	cTime = instance.getCurrentTime();
+	pCount = instance.getPlayerCount();
+}
+else
+{
+	cTime = instance.replayManager.getReplayTime();
+	pCount = instance.replayManager.getReplayPlayerCount();
+}
 
 if (cTime % movementDelay == 0)
 {
 	if (cTime >= turnTime && turnTime > thisLastTurned) 
 	{
-		y += 20;
+		if (pCount > 0)
+			y += 20;
 		
 		movementDirection = movementDirection * -1;
 		

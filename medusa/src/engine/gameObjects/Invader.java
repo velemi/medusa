@@ -15,6 +15,7 @@ public class Invader extends GameObject implements PhysicsObject, RenderableObje
 	static int DEFAULT_WIDTH = 40;
 	
 	private static long turnTime = -1L;
+	private static long rTurnTime = turnTime;
 	
 	private long thisLastTurned = turnTime;
 	
@@ -55,7 +56,14 @@ public class Invader extends GameObject implements PhysicsObject, RenderableObje
 		ScriptManager.bindArgument("y", y);
 		ScriptManager.bindArgument("width", width);
 		ScriptManager.bindArgument("height", height);
-		ScriptManager.bindArgument("turnTime", turnTime);
+		if(!instance.replayManager.isPlaying())
+		{
+			ScriptManager.bindArgument("turnTime", turnTime);
+		}
+		else
+		{
+			ScriptManager.bindArgument("turnTime", rTurnTime);
+		}
 		ScriptManager.bindArgument("thisLastTurned", thisLastTurned);
 		ScriptManager.bindArgument("movementDelay", movementDelay);
 		ScriptManager.bindArgument("fleetSpeed", fleetSpeed);
@@ -64,13 +72,16 @@ public class Invader extends GameObject implements PhysicsObject, RenderableObje
 		ScriptManager.bindArgument("instance", instance);
 	}
 	
-	private void updateValues()
+	private void updateValues(GameInstance instance)
 	{
 		x = ((Number) ScriptManager.retrieveValue("x")).floatValue();
 		y = ((Number) ScriptManager.retrieveValue("y")).floatValue();
 		height = ((Number) ScriptManager.retrieveValue("height")).floatValue();
 		width = ((Number) ScriptManager.retrieveValue("width")).floatValue();
-		turnTime = ((Number) ScriptManager.retrieveValue("turnTime")).longValue();
+		if(!instance.replayManager.isPlaying())
+			turnTime = ((Number) ScriptManager.retrieveValue("turnTime")).longValue();
+		else
+			rTurnTime = ((Number) ScriptManager.retrieveValue("turnTime")).longValue();
 		thisLastTurned = ((Number) ScriptManager.retrieveValue("thisLastTurned")).longValue();
 		fleetSpeed = ((Number) ScriptManager.retrieveValue("fleetSpeed")).floatValue();
 		movementDirection = ((Number) ScriptManager.retrieveValue("movementDirection")).intValue();
@@ -85,7 +96,7 @@ public class Invader extends GameObject implements PhysicsObject, RenderableObje
 		
 		ScriptManager.loadScript("scripts/invaders/invader_behaviour.js");
 		
-		updateValues();
+		updateValues(instance);
 		ScriptManager.clearBindings();
 		ScriptManager.unlock();
 	}
