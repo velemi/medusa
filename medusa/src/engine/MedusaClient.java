@@ -19,7 +19,6 @@ import engine.gameObjects.PlayerObject;
 import engine.network.NetworkHandler;
 import engine.network.messages.ClientDisconnectMessage;
 import engine.network.messages.GameEventMessage;
-import engine.network.messages.NetworkMessage;
 import engine.network.messages.NewClientMessage;
 import engine.time.Timeline;
 import processing.core.PApplet;
@@ -33,11 +32,12 @@ public class MedusaClient extends GameInstance
 {
 	public static final boolean DEBUG = GameInstance.DEBUG;
 	
-	private String leftState = "unpressed";
-	
-	/** This game client's PlayerObject */
 	private PlayerObject playerObject;
 	
+	private ClientLogicThread clientLogicThread = new ClientLogicThread();
+
+	private ServerHandler serverHandler;
+
 	@Override
 	public void queueEvent(GameEvent e, boolean propagate)
 	{
@@ -49,13 +49,134 @@ public class MedusaClient extends GameInstance
 			serverHandler.queueMessage(new GameEventMessage(e));
 	}
 	
-	private ClientLogicThread clientLogicThread = new ClientLogicThread();
+	@Override
+	public void setup()
+	{	
+		// Try to establish a connection to the server by instantiating a server
+		// handler
+		serverHandler = new ServerHandler(new Socket());
+		
+		if (serverHandler.connected)
+		{
+			// if the connection was successful, start server handler's threads,
+			// and logic thread
+			serverHandler.startThreads();
+			clientLogicThread.start();
+		}
+		else
+		{
+			// if the connection was not successful, print a failure message
+			// before exiting
+			System.out.println("Connection to server failed.");
+		}
+	}
 	
-	/**
-	 * The thread which handles the game logic loop
-	 * 
-	 * @author Jordan Neal
-	 */
+	public void keyPressed()
+	{
+		long curTime = gameTimeline.getTime();
+	
+		if (inputTime < curTime)
+		{
+			inputTime = curTime;
+			
+			inputCount = 0;
+		}
+		
+		if (!replayManager.isPlaying())
+		{
+			String inputString = "";
+			
+			if (key == CODED)
+			{
+				if (keyCode == LEFT)
+				{
+					inputString = "LEFT PRESSED";
+				}
+				else if (keyCode == RIGHT)
+				{
+					inputString = "RIGHT PRESSED";
+				}
+			}
+			else if (key == ' ')
+			{
+				inputString = "JUMP PRESSED";
+			}
+			else if ((key == 'B' || key == 'b') && DEBUG)
+			{
+				displayLogs();
+			}
+			
+			if (!inputString.equals(""))
+			{
+				queueEvent(new InputEvent(inputTime + 1, inputCount,
+						getInstanceID(), inputString, playerObject), true);
+				
+				inputLog.add(getInstanceID() + ", ts=" + (inputTime + 1) + ", count=" + inputCount
+						+ ": " + inputString + "@t=" + inputTime);
+				
+				inputCount++;
+			}
+				
+		}
+	}
+	
+	public void keyReleased()
+	{
+		long curTime = gameTimeline.getTime();
+		
+		if (inputTime < curTime)
+		{
+			inputTime = curTime;
+			
+			inputCount = 0;
+		}
+		
+		if (!replayManager.isPlaying())
+		{
+			String inputString = "";
+			
+			if (key == CODED)
+			{
+				if (keyCode == LEFT)
+				{
+					inputString = "LEFT RELEASED";
+				}
+				else if (keyCode == RIGHT)
+				{
+					inputString = "RIGHT RELEASED";
+				}
+			}
+			else if (key == ' ')
+			{
+				inputString = "JUMP RELEASED";
+			}
+			
+			if (!inputString.equals(""))
+			{
+				queueEvent(new InputEvent(inputTime + 1, inputCount,
+						getInstanceID(), inputString, playerObject), true);
+				
+				inputLog.add(getInstanceID() + ", ts=" + (inputTime + 1) + ", count=" + inputCount
+						+ ": " + inputString + "@t=" + inputTime);
+				
+				inputCount++;
+			}
+				
+		}
+	}
+	
+	public void runClient()
+	{
+		PApplet.main("engine.MedusaClient");
+	}
+	
+	public static void main(String[] args)
+	{
+		MedusaClient medusaClient = new MedusaClient();
+		medusaClient.runClient();
+	}
+
+	
 	private class ClientLogicThread extends CoreLogicThread
 	{
 		
@@ -71,73 +192,20 @@ public class MedusaClient extends GameInstance
 			super.run();
 		}
 	}
-	
-	private ServerHandler serverHandler;
-	
-	/**
-	 * A subclass which handles I/O between this game client and the game
-	 * server.
-	 * 
-	 * @author Jordan Neal
-	 */
+
 	class ServerHandler extends NetworkHandler
 	{
 		String serverHostname;
 		
+		public ServerHandler(Socket sock)
+		{
+			super(sock);
+		}
+	
 		@Override
 		protected void disconnect()
 		{
 			super.disconnect();
-		}
-		
-		class ClientInputThread extends NetworkInputThread
-		{
-			@Override
-			protected void respondToMessage()
-			{
-				switch (incomingMessage.getMessageType())
-				{
-					case "GameEventMessage":
-					{
-						GameEvent incomingEvent = ((GameEventMessage) incomingMessage).getEvent();
-						
-						queueEvent(incomingEvent, false);
-						
-						break;
-					}
-					case "ClientDisconnectMessage":
-					{
-						UUID disconnectedClient = ((ClientDisconnectMessage) incomingMessage).getClientID();
-						
-						eventManager.removeQueue(disconnectedClient);
-						
-						//removeFromMap(objectMap.getPlayerObject(disconnectedClient));
-						eventManager.queueEvent(new DespawnEvent(currentTime, instanceID, 
-								objectMap.getPlayerObject(disconnectedClient)));
-						
-						break;
-					}
-					case "NewClientMessage":
-					{
-						PlayerObject newPlayer = ((NewClientMessage) incomingMessage).getPlayer();
-						
-						eventManager.addQueue(newPlayer.getParentInstanceID());
-						
-						//addToMap(newPlayer);
-						eventManager.queueEvent(new SpawnEvent(currentTime, instanceID, playerObject));
-						
-						break;
-					}
-					default:
-						break;
-				}
-			}
-			
-		}
-		
-		public ServerHandler(Socket sock)
-		{
-			super(sock);
 		}
 		
 		protected void createThreads()
@@ -183,6 +251,31 @@ public class MedusaClient extends GameInstance
 			}
 		}
 		
+		protected void initDataTransactions()
+		{
+			try
+			{
+				setGameTitle((String) networkInput.readObject());
+				
+				initTimeline();
+						
+				initObjects();
+				
+				initEvents();
+			}
+			catch (ClassNotFoundException e)
+			{
+				System.err.println("ClassNotFoundException occurred while performing initial"
+						+ " communication with server - disconnecting & shutting down");
+				disconnect();
+			}
+			catch (IOException e)
+			{
+				System.err.println("IOException occurred while performing initial communcation"
+						+ " with server - disconnecting & shutting down");
+			}
+		}
+	
 		private void initTimeline() throws IOException
 		{
 			//System.out.println("time");
@@ -236,151 +329,53 @@ public class MedusaClient extends GameInstance
 			currentTime = serverGVT;
 		}
 		
-		protected void initDataTransactions()
+		class ClientInputThread extends NetworkInputThread
 		{
-			try
+			@Override
+			protected void respondToMessage()
 			{
-				setGameTitle((String) networkInput.readObject());
-				
-				initTimeline();
+				switch (incomingMessage.getMessageType())
+				{
+					case "GameEventMessage":
+					{
+						GameEvent incomingEvent = ((GameEventMessage) incomingMessage).getEvent();
 						
-				initObjects();
-				
-				initEvents();
-			}
-			catch (ClassNotFoundException e)
-			{
-				System.err.println("ClassNotFoundException occurred while performing initial"
-						+ " communication with server - disconnecting & shutting down");
-				disconnect();
-			}
-			catch (IOException e)
-			{
-				System.err.println("IOException occurred while performing initial communcation"
-						+ " with server - disconnecting & shutting down");
-			}
-		}
-		
-	}
-	
-	void sendMessageToServer(NetworkMessage message)
-	{
-		serverHandler.queueMessage(message);
-	}
-	
-	/*
-	 * Defines behavior to be run once when keys are pressed. May run repeatedly
-	 * (after system-dependent delay) if keys are held. (non-Javadoc)
-	 * @see processing.core.PApplet#keyPressed()
-	 */
-	public void keyPressed()
-	{
-		long curTime = gameTimeline.getTime();
-	
-		if (inputTime < curTime)
-		{
-			inputTime = curTime;
-			
-			inputCount = 0;
-		}
-		
-		if (!replayManager.isPlaying())
-		{
-			String inputString = "";
-			
-			if (key == CODED)
-			{
-				if (keyCode == LEFT)
-				{
-					inputString = "LEFT PRESSED";
-				}
-				else if (keyCode == RIGHT)
-				{
-					inputString = "RIGHT PRESSED";
+						if (incomingEvent instanceof InputEvent)
+							System.out.println("got inputEvent from: " + incomingEvent.getInstanceID());
+						
+						queueEvent(incomingEvent, false);
+						
+						break;
+					}
+					case "ClientDisconnectMessage":
+					{
+						UUID disconnectedClient = ((ClientDisconnectMessage) incomingMessage).getClientID();
+						
+						eventManager.removeQueue(disconnectedClient);
+						
+						//removeFromMap(objectMap.getPlayerObject(disconnectedClient));
+						eventManager.queueEvent(new DespawnEvent(currentTime, instanceID, 
+								objectMap.getPlayerObject(disconnectedClient)));
+						
+						break;
+					}
+					case "NewClientMessage":
+					{
+						PlayerObject newPlayer = ((NewClientMessage) incomingMessage).getPlayer();
+						
+						eventManager.addQueue(newPlayer.getParentInstanceID());
+						
+						//addToMap(newPlayer);
+						eventManager.queueEvent(new SpawnEvent(currentTime, instanceID, playerObject));
+						
+						break;
+					}
+					default:
+						break;
 				}
 			}
-			else if (key == ' ')
-			{
-				inputString = "JUMP PRESSED";
-			}
 			
-			if (!inputString.equals(""))
-				queueEvent(new InputEvent(inputTime + 1, inputCount,
-						getInstanceID(), inputString, playerObject), true);
-		}
-	}
-	
-	/*
-	 * Defines behavior to be run once when keys are released. (non-Javadoc)
-	 * @see processing.core.PApplet#keyReleased()
-	 */
-	public void keyReleased()
-	{
-		long curTime = gameTimeline.getTime();
-		
-		if (inputTime < curTime)
-		{
-			inputTime = curTime;
-			
-			inputCount = 0;
 		}
 		
-		if (!replayManager.isPlaying())
-		{
-			String inputString = "";
-			
-			if (key == CODED)
-			{
-				if (keyCode == LEFT)
-				{
-					inputString = "LEFT RELEASED";
-				}
-				else if (keyCode == RIGHT)
-				{
-					inputString = "RIGHT RELEASED";
-				}
-			}
-			else if (key == ' ')
-			{
-				inputString = "JUMP RELEASED";
-			}
-			
-			if (!inputString.equals(""))
-				queueEvent(new InputEvent(inputTime + 1, inputCount,
-						getInstanceID(), inputString, playerObject), true);
-		}
-	}
-	
-	@Override
-	public void setup()
-	{	
-		// Try to establish a connection to the server by instantiating a server
-		// handler
-		serverHandler = new ServerHandler(new Socket());
-		
-		if (serverHandler.connected)
-		{
-			// if the connection was successful, start server handler's threads,
-			// and logic thread
-			serverHandler.startThreads();
-			clientLogicThread.start();
-		}
-		else
-		{
-			// if the connection was not successful, print a failure message
-			// before exiting
-			System.out.println("Connection to server failed.");
-		}
-	}
-	
-	public void runClient()
-	{
-		PApplet.main("engine.MedusaClient");
-	}
-	
-	public static void main(String[] args)
-	{
-		MedusaClient medusaClient = new MedusaClient();
-		medusaClient.runClient();
 	}
 }

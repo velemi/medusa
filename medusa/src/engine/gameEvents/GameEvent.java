@@ -7,6 +7,8 @@ public abstract class GameEvent implements Serializable, Comparable<GameEvent>
 {
 	private static final long serialVersionUID = 2310896639535068630L;
 	
+	public UUID eventID = UUID.randomUUID();
+	
 	private GameEvent parentEvent;
 	private long timeStamp;
 	private int priority;

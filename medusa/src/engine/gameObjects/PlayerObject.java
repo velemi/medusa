@@ -43,10 +43,10 @@ public class PlayerObject
 	// == BASIC MOVEMENT == //
 	
 	/** True if the left movement key is being pressed */
-	private boolean leftPressed = false;
+	private Boolean leftPressed = false;
 	
 	/** True if the right movement key is being pressed */
-	private boolean rightPressed = false;
+	private Boolean rightPressed = false;
 	
 	/** The default horizontal movement speed of a player object */
 	private static final float DEFAULT_MOVE_SPEED = 5;
@@ -88,7 +88,7 @@ public class PlayerObject
 	private float jumpSpeed = DEFAULT_JUMP_SPEED;
 	
 	/** Should get set to TRUE if the jump key is being pressed */
-	private boolean jumpPressed = false;
+	private Boolean jumpPressed = false;
 	
 	/** True if this PlayerObject can currently jump */
 	private boolean canJump = false;
@@ -190,17 +190,26 @@ public class PlayerObject
 	
 	public void setLeftPressed(boolean leftPressed)
 	{
-		this.leftPressed = leftPressed;
+		synchronized (this.leftPressed)
+		{
+			this.leftPressed = leftPressed;
+		}
 	}
 	
 	public void setRightPressed(boolean rightPressed)
 	{
-		this.rightPressed = rightPressed;
+		synchronized (this.rightPressed)
+		{
+			this.rightPressed = rightPressed;
+		}
 	}
 	
 	public void setJumpPressed(boolean jumpPressed)
 	{
-		this.jumpPressed = jumpPressed;
+		synchronized (this.jumpPressed)
+		{
+			this.jumpPressed = jumpPressed;
+		}
 	}
 	
 	private void exposeScriptingObjects(GameInstance instance)

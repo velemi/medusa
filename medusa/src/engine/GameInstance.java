@@ -1,5 +1,9 @@
 package engine;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.Random;
 import java.util.UUID;
@@ -62,6 +66,52 @@ public abstract class GameInstance extends PApplet
 	long inputTime = 0;
 	
 	int inputCount = 0;
+	
+	ConcurrentLinkedQueue<String> inputLog = new ConcurrentLinkedQueue<String>();
+	
+	ConcurrentLinkedQueue<String> handledLog = new ConcurrentLinkedQueue<String>();
+	
+	private Object deepClone(Object object)
+	{
+		try
+		{
+			ByteArrayOutputStream baos = new ByteArrayOutputStream();
+			ObjectOutputStream oos = new ObjectOutputStream(baos);
+			oos.writeObject(object);
+			ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
+			ObjectInputStream ois = new ObjectInputStream(bais);
+			return ois.readObject();
+		}
+		catch (Exception e)
+		{
+			e.printStackTrace();
+			return null;
+		}
+	}
+	
+	@SuppressWarnings("unchecked")
+	protected void displayLogs()
+	{
+		pauseExeAndTime();
+		ConcurrentLinkedQueue<String> iLog = (ConcurrentLinkedQueue<String>) deepClone(inputLog);
+		ConcurrentLinkedQueue<String> hLog = (ConcurrentLinkedQueue<String>) deepClone(handledLog);
+		
+		System.out.println("Log for instance " + getInstanceID() + ", t=" + currentTime + ": ");
+		
+		System.out.println("Inputs received: (" + iLog.size() + ")");
+		while (!iLog.isEmpty())
+		{
+			System.out.println(iLog.poll());
+		}
+		
+		System.out.println("\nInputs handled: (" + hLog.size() + ")");
+		while (!hLog.isEmpty())
+		{
+			System.out.println(hLog.poll());
+		}
+		
+		resumeExeAndTime();
+	}
 	
 	protected void pauseExeAndTime()
 	{
@@ -541,6 +591,12 @@ public abstract class GameInstance extends PApplet
 		
 		private void handle(InputEvent e)
 		{
+			PlayerObject p = objectMap.getPlayerObject(e.getInstanceID());
+			
+			String h = e.getInstanceID() + ", ts="+ e.getTimeStamp() + ", count=" + (e.getPriority() - 10)
+					+ ": " + e.getInput() + "@t=" + currentTime + " -> ";
+			
+			
 			ScriptManager.lock();
 			ScriptManager.bindArgument("objectMap", objectMap);
 			ScriptManager.bindArgument("e", e);
@@ -552,6 +608,10 @@ public abstract class GameInstance extends PApplet
 			
 			ScriptManager.clearBindings();
 			ScriptManager.unlock();
+			
+			h = h + "l:" + p.isLeftPressed() + ", r:" + p.isRightPressed() + ", j:" + p.isJumpPressed();
+			
+			handledLog.add(h);
 		}
 		
 		private void handle(DeathEvent e)

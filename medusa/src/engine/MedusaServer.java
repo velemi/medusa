@@ -52,7 +52,7 @@ public class MedusaServer extends GameInstance
 			{
 				for (ClientHandler client : clientList)
 				{
-					if (client.clientInstanceID != e.getInstanceID())
+					if (!client.clientInstanceID.equals(e.getInstanceID()))
 					{
 						client.queueMessage(new GameEventMessage(e));
 					}
@@ -183,11 +183,18 @@ public class MedusaServer extends GameInstance
 			{
 				inputString = "PLAYBACK120";
 			}
+			else if ((key == 'B' || key == 'b') && DEBUG)
+			{
+				displayLogs();
+			}
 			
 			if (!inputString.equals(""))
 			{
 				queueEvent(new InputEvent(inputTime + 1, inputCount,
 						getInstanceID(), inputString, null), true);
+				
+				inputLog.add(getInstanceID() + ", ts=" + (inputTime + 1) + ", count=" + inputCount
+						+ ": " + inputString + "@t=" + inputTime);
 				
 				inputCount++;
 			}

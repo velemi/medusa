@@ -20,7 +20,7 @@ public class InputEvent extends GameEvent
 	
 	public InputEvent(long ts, int minusPriority, UUID instanceID, String input, PlayerObject player)
 	{
-		this(null, ts, DEFAULT_PRIORITY + minusPriority, instanceID, input, player);
+		this(null, ts, minusPriority, instanceID, input, player);
 	}
 	
 	public InputEvent(GameEvent parent, long ts, UUID instanceID, String input, PlayerObject player)
@@ -31,7 +31,7 @@ public class InputEvent extends GameEvent
 	public InputEvent(GameEvent parent, long ts, int priority, UUID instanceID,
 			String input, PlayerObject player)
 	{
-		super(parent, ts, DEFAULT_PRIORITY - priority, instanceID);
+		super(parent, ts, DEFAULT_PRIORITY + priority, instanceID);
 		
 		this.input = input;
 		this.player = player;
