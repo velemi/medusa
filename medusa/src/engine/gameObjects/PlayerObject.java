@@ -179,9 +179,9 @@ public class PlayerObject
 		ScriptManager.bindArgument("height", height);
 		
 		if (parent.getGameTitle().equals("platform"))
-			ScriptManager.loadScript("src/scripts/platformer/playerObject_display.js");
+			ScriptManager.loadScript("platformer/playerObject_display.js");
 		else if (parent.getGameTitle().equals("invaders"))
-			ScriptManager.loadScript("src/scripts/invaders/playerObject_display.js");
+			ScriptManager.loadScript("invaders/playerObject_display.js");
 		
 		ScriptManager.clearBindings();
 		
@@ -261,9 +261,9 @@ public class PlayerObject
 		exposeScriptingObjects(instance);
 		
 		if (instance.getGameTitle().equals("platform"))
-			ScriptManager.loadScript("src/scripts/platformer/playerObject_behaviour.js");
+			ScriptManager.loadScript("platformer/playerObject_behaviour.js");
 		else if (instance.getGameTitle().equals("invaders"))
-			ScriptManager.loadScript("src/scripts/invaders/playerObject_behaviour.js");
+			ScriptManager.loadScript("invaders/playerObject_behaviour.js");
 		
 		updateValues();
 		ScriptManager.clearBindings();

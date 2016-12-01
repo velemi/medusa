@@ -28,6 +28,17 @@ public class GameObjectSet implements Serializable
 		
 	}
 	
+	public UUID getFirstPlayerID()
+	{
+		if (!playerObjects.isEmpty())
+		{
+			for (UUID u : playerObjects.keySet())
+				return u;
+		}
+		
+		return null;
+	}
+	
 	public void addToSet(GameObject o)
 	{
 		lock.writeLock().lock();

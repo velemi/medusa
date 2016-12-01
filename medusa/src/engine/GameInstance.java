@@ -89,9 +89,19 @@ public abstract class GameInstance extends PApplet
 		}
 	}
 	
+	public GameObjectSet getObjectMap()
+	{
+		return objectMap;
+	}
+	
 	public int getPlayerCount()
 	{
 		return objectMap.getPlayerCount();
+	}
+	
+	public UUID getFirstPlayerID()
+	{
+		return objectMap.getFirstPlayerID();
 	}
 	
 	@SuppressWarnings("unchecked")
@@ -382,9 +392,9 @@ public abstract class GameInstance extends PApplet
 			ScriptManager.bindArgument("instance", thisInstance);
 			
 			if (getGameTitle().equals("platform"))
-				ScriptManager.loadScript("src/scripts/platformer/collisionEvent_handling.js");
+				ScriptManager.loadScript("platformer/collisionEvent_handling.js");
 			else if (getGameTitle().equals("invaders"))
-				ScriptManager.loadScript("src/scripts/invaders/collisionEvent_handling.js");
+				ScriptManager.loadScript("invaders/collisionEvent_handling.js");
 			
 			ScriptManager.invokeFunction("handle", true);
 			
@@ -400,9 +410,9 @@ public abstract class GameInstance extends PApplet
 			ScriptManager.bindArgument("instance", thisInstance);
 			
 			if (getGameTitle().equals("platform"))
-				ScriptManager.loadScript("src/scripts/platformer/deathEvent_handling.js");
+				ScriptManager.loadScript("platformer/deathEvent_handling.js");
 			else if (getGameTitle().equals("invaders"))
-				ScriptManager.loadScript("src/scripts/invaders/deathEvent_handling.js");
+				ScriptManager.loadScript("invaders/deathEvent_handling.js");
 			
 			ScriptManager.invokeFunction("handle", true);
 			
@@ -417,7 +427,7 @@ public abstract class GameInstance extends PApplet
 			ScriptManager.bindArgument("e", e);
 			ScriptManager.bindArgument("instance", thisInstance);
 			
-			ScriptManager.loadScript("src/scripts/platformer/despawnEvent_handling.js");
+			ScriptManager.loadScript("platformer/despawnEvent_handling.js");
 			
 			ScriptManager.invokeFunction("handle", true);
 			
@@ -432,7 +442,7 @@ public abstract class GameInstance extends PApplet
 			ScriptManager.bindArgument("e", e);
 			ScriptManager.bindArgument("replayManager", replayManager);
 			
-			ScriptManager.loadScript("src/scripts/platformer/inputEvent_handling.js");
+			ScriptManager.loadScript("platformer/inputEvent_handling.js");
 			
 			ScriptManager.invokeFunction("handle", true);
 			
@@ -447,7 +457,7 @@ public abstract class GameInstance extends PApplet
 			ScriptManager.bindArgument("e", e);
 			ScriptManager.bindArgument("instance", thisInstance);
 			
-			ScriptManager.loadScript("src/scripts/platformer/spawnEvent_handling.js");
+			ScriptManager.loadScript("platformer/spawnEvent_handling.js");
 			
 			ScriptManager.invokeFunction("handle", true);
 			
@@ -634,9 +644,9 @@ public abstract class GameInstance extends PApplet
 			ScriptManager.bindArgument("instance", thisInstance);
 			
 			if (getGameTitle().equals("platform"))
-				ScriptManager.loadScript("src/scripts/platformer/collisionEvent_handling.js");
+				ScriptManager.loadScript("platformer/collisionEvent_handling.js");
 			else if (getGameTitle().equals("invaders"))
-				ScriptManager.loadScript("src/scripts/invaders/collisionEvent_handling.js");
+				ScriptManager.loadScript("invaders/collisionEvent_handling.js");
 			
 			ScriptManager.invokeFunction("handle", false);
 			
@@ -657,7 +667,7 @@ public abstract class GameInstance extends PApplet
 			ScriptManager.bindArgument("e", e);
 			ScriptManager.bindArgument("replayManager", replayManager);
 			
-			ScriptManager.loadScript("src/scripts/platformer/inputEvent_handling.js");
+			ScriptManager.loadScript("platformer/inputEvent_handling.js");
 			
 			ScriptManager.invokeFunction("handle", false);
 			
@@ -679,9 +689,9 @@ public abstract class GameInstance extends PApplet
 			ScriptManager.bindArgument("instance", thisInstance);
 			
 			if (getGameTitle().equals("platform"))
-				ScriptManager.loadScript("src/scripts/platformer/deathEvent_handling.js");
+				ScriptManager.loadScript("platformer/deathEvent_handling.js");
 			else if (getGameTitle().equals("invaders"))
-				ScriptManager.loadScript("src/scripts/invaders/deathEvent_handling.js");
+				ScriptManager.loadScript("invaders/deathEvent_handling.js");
 			
 			ScriptManager.invokeFunction("handle", false);
 			
@@ -696,7 +706,7 @@ public abstract class GameInstance extends PApplet
 			ScriptManager.bindArgument("e", e);
 			ScriptManager.bindArgument("instance", thisInstance);
 			
-			ScriptManager.loadScript("src/scripts/platformer/spawnEvent_handling.js");
+			ScriptManager.loadScript("platformer/spawnEvent_handling.js");
 			
 			ScriptManager.invokeFunction("handle", false);
 			
@@ -711,7 +721,7 @@ public abstract class GameInstance extends PApplet
 			ScriptManager.bindArgument("e", e);
 			ScriptManager.bindArgument("instance", thisInstance);
 			
-			ScriptManager.loadScript("src/scripts/platformer/despawnEvent_handling.js");
+			ScriptManager.loadScript("platformer/despawnEvent_handling.js");
 			
 			ScriptManager.invokeFunction("handle", false);
 			

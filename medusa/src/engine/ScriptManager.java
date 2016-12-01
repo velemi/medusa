@@ -54,7 +54,7 @@ public class ScriptManager {
 	 */
 	public static void loadScript(String script_name) {
 		try {
-			js_engine.eval(new java.io.FileReader(script_name));
+			js_engine.eval(new java.io.FileReader("src/scripts/" + script_name));
 		}
 		catch(ScriptException se) {
 			se.printStackTrace();

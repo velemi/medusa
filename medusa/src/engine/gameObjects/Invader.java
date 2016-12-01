@@ -19,7 +19,7 @@ public class Invader extends GameObject implements PhysicsObject, RenderableObje
 	
 	private long thisLastTurned = turnTime;
 	
-	private static float movementDelay = 30;
+	private static float movementDelay = 15;
 	
 	private int movementDirection = 1;
 	
@@ -43,7 +43,7 @@ public class Invader extends GameObject implements PhysicsObject, RenderableObje
 		ScriptManager.bindArgument("width", width);
 		ScriptManager.bindArgument("height", height);
 		
-		ScriptManager.loadScript("src/scripts/invaders/invader_display.js");
+		ScriptManager.loadScript("invaders/invader_display.js");
 		
 		ScriptManager.clearBindings();
 		
@@ -68,7 +68,9 @@ public class Invader extends GameObject implements PhysicsObject, RenderableObje
 		ScriptManager.bindArgument("movementDelay", movementDelay);
 		ScriptManager.bindArgument("fleetSpeed", fleetSpeed);
 		ScriptManager.bindArgument("movementDirection", movementDirection);
-		
+
+		ScriptManager.bindArgument("invader", this);
+		ScriptManager.bindArgument("objectMap", instance.getObjectMap());
 		ScriptManager.bindArgument("instance", instance);
 	}
 	
@@ -94,7 +96,7 @@ public class Invader extends GameObject implements PhysicsObject, RenderableObje
 		ScriptManager.lock();
 		exposeScriptingObjects(instance);
 		
-		ScriptManager.loadScript("src/scripts/invaders/invader_behaviour.js");
+		ScriptManager.loadScript("invaders/invader_behaviour.js");
 		
 		updateValues(instance);
 		ScriptManager.clearBindings();

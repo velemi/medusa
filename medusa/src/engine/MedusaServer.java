@@ -107,9 +107,9 @@ public class MedusaServer extends GameInstance
 		ScriptManager.bindArgument("instance", thisInstance);
 		
 		if (getGameTitle().equals("platform"))
-			ScriptManager.loadScript("src/scripts/platformer/gameObject_setup.js");
+			ScriptManager.loadScript("platformer/gameObject_setup.js");
 		else if (getGameTitle().equals("invaders"))
-			ScriptManager.loadScript("src/scripts/invaders/gameObject_setup.js");
+			ScriptManager.loadScript("invaders/gameObject_setup.js");
 		
 		ScriptManager.clearBindings();
 		ScriptManager.unlock();

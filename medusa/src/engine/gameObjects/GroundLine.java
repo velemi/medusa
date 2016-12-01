@@ -10,6 +10,9 @@ public class GroundLine extends GameObject implements RenderableObject
 	public GroundLine(float y)
 	{
 		super(0, y);
+		
+		height = 2;
+		width = 2;
 	}
 
 	@Override

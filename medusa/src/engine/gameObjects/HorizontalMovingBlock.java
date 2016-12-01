@@ -52,7 +52,7 @@ public class HorizontalMovingBlock extends Block implements PhysicsObject
 	{
 		ScriptManager.lock();
 		exposeScriptingObjects(instance);
-		ScriptManager.loadScript("src/scripts/platformer/movingBlock_behaviour.js");
+		ScriptManager.loadScript("platformer/movingBlock_behaviour.js");
 		updateValues();
 		ScriptManager.clearBindings();
 		ScriptManager.unlock();

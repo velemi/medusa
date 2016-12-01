@@ -1,7 +1,7 @@
 Killable = Java.type("engine.gameObjects.objectClasses.Killable");
 PlayerObject = Java.type("engine.gameObjects.PlayerObject");
 Invader = Java.type("engine.gameObjects.Invader");
-TextObject = Java.type("engine.gameObjects.TextObject")
+TextObject = Java.type("engine.gameObjects.TextObject");
 ArrayList = Java.type("java.util.ArrayList");
 
 function handle(duringReplay) {
