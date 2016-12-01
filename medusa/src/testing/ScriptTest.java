@@ -17,7 +17,7 @@ public class ScriptTest
 		ScriptManager.bindArgument("Block", Block.class);
 		ScriptManager.bindArgument("SpawnPoint", SpawnPoint.class);
 		
-		ScriptManager.loadScript("scripts/testScript.js");
+		ScriptManager.loadScript("src/scripts/testScript.js");
 	}
 	
 }

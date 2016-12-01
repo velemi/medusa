@@ -107,9 +107,9 @@ public class MedusaServer extends GameInstance
 		ScriptManager.bindArgument("instance", thisInstance);
 		
 		if (getGameTitle().equals("platform"))
-			ScriptManager.loadScript("scripts/platformer/gameObject_setup.js");
+			ScriptManager.loadScript("src/scripts/platformer/gameObject_setup.js");
 		else if (getGameTitle().equals("invaders"))
-			ScriptManager.loadScript("scripts/invaders/gameObject_setup.js");
+			ScriptManager.loadScript("src/scripts/invaders/gameObject_setup.js");
 		
 		ScriptManager.clearBindings();
 		ScriptManager.unlock();
@@ -146,6 +146,7 @@ public class MedusaServer extends GameInstance
 	 * (after system-dependent delay) if keys are held. (non-Javadoc)
 	 * @see processing.core.PApplet#keyPressed()
 	 */
+	@SuppressWarnings("unused")
 	public void keyPressed()
 	{
 		long curTime = gameTimeline.getTime();

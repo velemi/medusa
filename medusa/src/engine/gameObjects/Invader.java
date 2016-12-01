@@ -43,7 +43,7 @@ public class Invader extends GameObject implements PhysicsObject, RenderableObje
 		ScriptManager.bindArgument("width", width);
 		ScriptManager.bindArgument("height", height);
 		
-		ScriptManager.loadScript("scripts/invaders/invader_display.js");
+		ScriptManager.loadScript("src/scripts/invaders/invader_display.js");
 		
 		ScriptManager.clearBindings();
 		
@@ -94,7 +94,7 @@ public class Invader extends GameObject implements PhysicsObject, RenderableObje
 		ScriptManager.lock();
 		exposeScriptingObjects(instance);
 		
-		ScriptManager.loadScript("scripts/invaders/invader_behaviour.js");
+		ScriptManager.loadScript("src/scripts/invaders/invader_behaviour.js");
 		
 		updateValues(instance);
 		ScriptManager.clearBindings();

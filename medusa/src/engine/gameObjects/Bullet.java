@@ -70,7 +70,7 @@ public class Bullet extends GameObject implements PhysicsObject, Killable, Rende
 		ScriptManager.lock();
 		exposeScriptingObjects(instance);
 		
-		ScriptManager.loadScript("scripts/invaders/bullet_behaviour.js");
+		ScriptManager.loadScript("src/scripts/invaders/bullet_behaviour.js");
 		
 		updateValues();
 		ScriptManager.clearBindings();

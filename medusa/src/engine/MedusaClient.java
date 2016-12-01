@@ -71,6 +71,7 @@ public class MedusaClient extends GameInstance
 		}
 	}
 	
+	@SuppressWarnings("unused")
 	public void keyPressed()
 	{
 		long curTime = gameTimeline.getTime();
