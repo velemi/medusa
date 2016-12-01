@@ -70,8 +70,8 @@ public class MedusaServer extends GameInstance
 		while(gameTitle.equals(""))
 		{
 			System.out.println("Select the game for this server to run:");
-			System.out.println("1: Platform");
-			System.out.println("2: Invaders");
+			System.out.println("1: Platform     (Any number of players)");
+			System.out.println("2: Invaders!    (Intended for one player)");
 			
 			System.out.print("\nSelection: ");
 			

@@ -14,7 +14,9 @@ public class Invader extends GameObject implements PhysicsObject, RenderableObje
 	
 	static int DEFAULT_WIDTH = 40;
 	
-	private static long turnTime = 0L;
+	private static long turnTime = -1L;
+	
+	private long thisLastTurned = turnTime;
 	
 	private static float movementDelay = 30;
 	
@@ -54,6 +56,7 @@ public class Invader extends GameObject implements PhysicsObject, RenderableObje
 		ScriptManager.bindArgument("width", width);
 		ScriptManager.bindArgument("height", height);
 		ScriptManager.bindArgument("turnTime", turnTime);
+		ScriptManager.bindArgument("thisLastTurned", thisLastTurned);
 		ScriptManager.bindArgument("movementDelay", movementDelay);
 		ScriptManager.bindArgument("fleetSpeed", fleetSpeed);
 		ScriptManager.bindArgument("movementDirection", movementDirection);
@@ -68,6 +71,7 @@ public class Invader extends GameObject implements PhysicsObject, RenderableObje
 		height = ((Number) ScriptManager.retrieveValue("height")).floatValue();
 		width = ((Number) ScriptManager.retrieveValue("width")).floatValue();
 		turnTime = ((Number) ScriptManager.retrieveValue("turnTime")).longValue();
+		thisLastTurned = ((Number) ScriptManager.retrieveValue("thisLastTurned")).longValue();
 		fleetSpeed = ((Number) ScriptManager.retrieveValue("fleetSpeed")).floatValue();
 		movementDirection = ((Number) ScriptManager.retrieveValue("movementDirection")).intValue();
 		movementDelay = ((Number) ScriptManager.retrieveValue("movementDelay")).floatValue();

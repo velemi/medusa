@@ -223,6 +223,22 @@ public abstract class GameInstance extends PApplet
 		size(SCREEN_WIDTH, SCREEN_HEIGHT);
 	}
 	
+	private void drawGrid(float gridSize)
+	{
+		fill(25);
+		stroke(25);
+		
+		for (int i = 1; i < SCREEN_WIDTH / gridSize; i++)
+		{
+			line(0, i * gridSize, SCREEN_WIDTH, i * gridSize);
+		}
+		
+		for (int i = 1; i < SCREEN_HEIGHT / gridSize; i++)
+		{
+			line(i * gridSize, 0, i * gridSize, SCREEN_HEIGHT);
+		}
+	}
+	
 	/*
 	 * Defines behavior to be run once per animation frame of the PApplet.
 	 * (non-Javadoc)
@@ -232,9 +248,14 @@ public abstract class GameInstance extends PApplet
 	{
 		// render the frame & gameObjects
 		if(getGameTitle().equals("invaders"))
+		{
 			background(0);
+			drawGrid(50);
+		}
 		else
+		{
 			background(204);
+		}
 		
 		if (replayManager.isRecording())
 		{
@@ -266,6 +287,14 @@ public abstract class GameInstance extends PApplet
 				((RenderableObject) o).display(this);
 			}
 		}
+		
+		String logic = "   Logical Time: " + getCurrentTime();
+		String real =  "Game Time: " + gameTimeline.getTime();
+		
+		fill(0,100,0);
+		stroke(0,100,0);
+		textSize(10);
+		text(real + logic, 5, SCREEN_HEIGHT - 5);
 	}
 
 	public class ReplayManager

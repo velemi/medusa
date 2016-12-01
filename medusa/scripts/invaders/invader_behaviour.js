@@ -4,11 +4,13 @@ cTime = instance.getCurrentTime();
 
 if (cTime % movementDelay == 0)
 {
-	if (cTime == turnTime) 
+	if (cTime >= turnTime && turnTime > thisLastTurned) 
 	{
 		y += 20;
 		
 		movementDirection = movementDirection * -1;
+		
+		thisLastTurned = cTime;
 	}
 	else 
 	{
