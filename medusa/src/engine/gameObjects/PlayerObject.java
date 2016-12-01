@@ -7,7 +7,6 @@ import engine.gameObjects.objectClasses.Killable;
 import engine.gameObjects.objectClasses.PhysicsObject;
 import engine.gameObjects.objectClasses.RenderableObject;
 import engine.gameObjects.objectClasses.Spawnable;
-import processing.core.PApplet;
 
 /**
  * A player-controllable game object
@@ -36,10 +35,10 @@ public class PlayerObject
 	// == SIZE == //
 	
 	/** Default height, in pixels, of a PlayerObject */
-	static final int DEFAULT_HEIGHT = 40;
+	static int DEFAULT_HEIGHT = 40;
 	
 	/** Default width, in pixels, of a PlayerObject */
-	static final int DEFAULT_WIDTH = 30;
+	static int DEFAULT_WIDTH = 30;
 	
 	// == BASIC MOVEMENT == //
 	
@@ -145,6 +144,12 @@ public class PlayerObject
 		spawn = s;
 	}
 	
+	public static void setDefaultSize(int width, int height)
+	{
+		PlayerObject.DEFAULT_HEIGHT = height;
+		PlayerObject.DEFAULT_WIDTH = width;
+	}
+	
 	public UUID getParentInstanceID()
 	{
 		return this.parentInstanceID;
@@ -160,11 +165,31 @@ public class PlayerObject
 	 * (non-Javadoc)
 	 * @see engine.GameObject#display()
 	 */
-	public synchronized void display(PApplet parent)
+	public synchronized void display(GameInstance parent)
 	{
-		parent.fill(color[0], color[1], color[2]);
-		parent.stroke(0);
-		parent.rect(this.x, this.y, this.width, this.height);
+		ScriptManager.lock();
+		
+		ScriptManager.bindArgument("parent", parent);
+		ScriptManager.bindArgument("r", color[0]);
+		ScriptManager.bindArgument("g", color[1]);
+		ScriptManager.bindArgument("b", color[2]);
+		ScriptManager.bindArgument("x", x);
+		ScriptManager.bindArgument("y", y);
+		ScriptManager.bindArgument("width", width);
+		ScriptManager.bindArgument("height", height);
+		
+		if (parent.getGameTitle().equals("platform"))
+			ScriptManager.loadScript("scripts/platformer/playerObject_display.js");
+		else if (parent.getGameTitle().equals("invaders"))
+			ScriptManager.loadScript("scripts/invaders/playerObject_display.js");
+		
+		ScriptManager.clearBindings();
+		
+		ScriptManager.unlock();
+		
+//		parent.fill(color[0], color[1], color[2]);
+//		parent.stroke(0);
+//		parent.rect(x, y, width, height);
 		
 	}
 	
@@ -184,7 +209,7 @@ public class PlayerObject
 	}
 	
 	private void exposeScriptingObjects(GameInstance instance)
-	{
+	{	
 		ScriptManager.bindArgument("movementDirection", movementDirection);
 		ScriptManager.bindArgument("leftPressed", leftPressed);
 		ScriptManager.bindArgument("rightPressed", rightPressed);
@@ -228,10 +253,12 @@ public class PlayerObject
 	/** Updates this PlayerObject's position based on its current state. */
 	public synchronized void doPhysics(GameInstance instance)
 	{
+		ScriptManager.lock();
 		exposeScriptingObjects(instance);
 		ScriptManager.loadScript("scripts/platformer/playerObject_behaviour.js");
 		updateValues();
 		ScriptManager.clearBindings();
+		ScriptManager.unlock();
 	}
 	
 	public static PlayerObject createNew()

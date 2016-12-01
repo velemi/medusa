@@ -1,5 +1,6 @@
 package engine;
 
+import java.util.concurrent.locks.ReentrantLock;
 import javax.script.Invocable;
 import javax.script.ScriptContext;
 import javax.script.ScriptEngine;
@@ -15,6 +16,18 @@ public class ScriptManager {
 	private static ScriptEngine js_engine = new ScriptEngineManager().getEngineByName("JavaScript");
 	/* The Invocable reference to the engine. */
 	private static Invocable js_invocable = (Invocable) js_engine;
+	
+	private static ReentrantLock lock = new ReentrantLock();
+	
+	public static void lock()
+	{
+		lock.lock();
+	}
+	
+	public static void unlock()
+	{
+		lock.unlock();
+	}
 
 	/**
 	 * Used to bind the provided object to the name in the scope of the scripts

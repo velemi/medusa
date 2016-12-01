@@ -1,8 +1,8 @@
 package engine.gameObjects.objectClasses;
 
-import processing.core.PApplet;
+import engine.GameInstance;
 
 public interface RenderableObject
 {
-	public void display(PApplet parent);
+	public void display(GameInstance parent);
 }

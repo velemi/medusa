@@ -7,17 +7,14 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
 import java.util.ArrayList;
+import java.util.Scanner;
 import java.util.UUID;
 import engine.gameEvents.DespawnEvent;
 import engine.gameEvents.GameEvent;
 import engine.gameEvents.InputEvent;
 import engine.gameEvents.NullEvent;
 import engine.gameEvents.SpawnEvent;
-import engine.gameObjects.Block;
-import engine.gameObjects.DeathZone;
-import engine.gameObjects.HorizontalMovingBlock;
 import engine.gameObjects.PlayerObject;
-import engine.gameObjects.SpawnPoint;
 import engine.network.NetworkHandler;
 import engine.network.messages.ClientDisconnectMessage;
 import engine.network.messages.GameEventMessage;
@@ -318,6 +315,8 @@ public class MedusaServer extends GameInstance
 			
 			try
 			{
+				networkOutput.writeObject(getGameTitle());
+				
 				initClientTimeline();
 				
 				initClientObjects();
@@ -344,55 +343,41 @@ public class MedusaServer extends GameInstance
 	/** Performs initial setup of GameObjects for this server */
 	private void setUpGameObjects()
 	{
-		// blocks
-		addToMap(new Block(50, 100));
-		addToMap(new Block(200, 100));
-		addToMap(new Block(264, 187));
-		for (int i = 1; i < 11; i++)
-		{
-			addToMap(new Block(i * 50, 300));
-		}
-		addToMap(new Block(50, 245));
-		addToMap(new Block(500, 245));
+		ScriptManager.lock();
+		ScriptManager.bindArgument("instance", thisInstance);
 		
-		// deathZones
-		for (int i = -2; i < 9; i++)
-		{
-			addToMap(new DeathZone(100 * i, 900));
-			addToMap(new DeathZone(100 * i, -200));
-			addToMap(new DeathZone(-200, i * 100));
-			addToMap(new DeathZone(900, i * 100));
-		}
+		ScriptManager.loadScript("scripts/platformer/gameObject_setup.js");
 		
-		// spawnPoints
-		addToMap(new SpawnPoint(204, 55));
-		addToMap(new SpawnPoint(52, 40));
-		addToMap(new SpawnPoint(260, 130));
-		
-		// moving platform
-		addToMap(new HorizontalMovingBlock(400, 500));
-		addToMap(new HorizontalMovingBlock(320, 187));
-		addToMap(new HorizontalMovingBlock(100, 500));
+		ScriptManager.clearBindings();
+		ScriptManager.unlock();
 	}
 	
 	@Override
 	public void setup()
 	{
-		instanceID = UUID.randomUUID();
+
+		selectGame();
 		
-		setUpGameObjects();
-		
-		eventManager.registerHandler(new CoreEventHandler(), new String[ ] {
-				"CollisionEvent", "InputEvent", "DeathEvent", "SpawnEvent", "DespawnEvent" });
-		
-		eventManager.addQueue(instanceID);
-		eventManager.setGVT(0);
-				
-		gameTimeline = new Timeline(1000000000L / TARGET_FRAMERATE);
-		
-		ConnectionListener connectionListener = new ConnectionListener();
-		connectionListener.start();
-		serverLogicThread.start();
+		if (!gameTitle.equals(""))
+		{
+			System.out.println("\nNow preparing to start game \"" + getGameTitle() + "\"...\n\n");
+			
+			instanceID = UUID.randomUUID();
+			
+			setUpGameObjects();
+			
+			eventManager.registerHandler(new CoreEventHandler(), new String[ ] {
+					"CollisionEvent", "InputEvent", "DeathEvent", "SpawnEvent", "DespawnEvent" });
+			
+			eventManager.addQueue(instanceID);
+			eventManager.setGVT(0);
+					
+			gameTimeline = new Timeline(1000000000L / TARGET_FRAMERATE);
+			
+			ConnectionListener connectionListener = new ConnectionListener();
+			connectionListener.start();
+			serverLogicThread.start();
+		}
 	}
 	
 	/*
@@ -432,6 +417,26 @@ public class MedusaServer extends GameInstance
 			if (!inputString.equals(""))
 				queueEvent(new InputEvent(gameTimeline.getTime() + 1, getInstanceID(), inputString, null), true);
 		}
+	}
+
+	private void selectGame()
+	{
+		System.out.println("Select the game for this server to run:");
+		System.out.println("1: Platform");
+		System.out.println("2: Invaders");
+		
+		System.out.print("\nSelection: ");
+		
+		Scanner in = new Scanner(System.in);
+		
+		int select = in.nextInt();
+		
+		in.close();
+		
+		if (select == 1)
+			setGameTitle("platform");
+		else if (select == 2)
+			setGameTitle("invaders");
 	}
 	
 	/** Runs this game server */

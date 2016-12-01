@@ -57,6 +57,24 @@ public abstract class GameInstance extends PApplet
 	
 	long currentTime;
 	
+	String gameTitle = "";
+	
+	public void setGameTitle(String title)
+	{
+		synchronized(gameTitle)
+		{
+			gameTitle = title;
+		}
+	}
+	
+	public String getGameTitle()
+	{
+		synchronized(gameTitle)
+		{
+			return gameTitle;
+		}
+	}
+	
 	public void addToMap(GameObject object)
 	{
 		objectMap.addToSet(object);
@@ -250,6 +268,7 @@ public abstract class GameInstance extends PApplet
 		
 		private void handle(CollisionEvent e)
 		{
+			ScriptManager.lock();
 			ScriptManager.bindArgument("objectMap", objectMap);
 			ScriptManager.bindArgument("e", e);
 			ScriptManager.bindArgument("instance", thisInstance);
@@ -259,10 +278,12 @@ public abstract class GameInstance extends PApplet
 			ScriptManager.invokeFunction("handle", true);
 			
 			ScriptManager.clearBindings();
+			ScriptManager.unlock();
 		}
 		
 		private void handle(DeathEvent e)
 		{
+			ScriptManager.lock();
 			ScriptManager.bindArgument("objectMap", objectMap);
 			ScriptManager.bindArgument("e", e);
 			ScriptManager.bindArgument("instance", thisInstance);
@@ -272,10 +293,12 @@ public abstract class GameInstance extends PApplet
 			ScriptManager.invokeFunction("handle", true);
 			
 			ScriptManager.clearBindings();
+			ScriptManager.unlock();
 		}
 		
 		private void handle(DespawnEvent e)
 		{
+			ScriptManager.lock();
 			ScriptManager.bindArgument("objectMap", objectMap);
 			ScriptManager.bindArgument("e", e);
 			ScriptManager.bindArgument("instance", thisInstance);
@@ -285,10 +308,12 @@ public abstract class GameInstance extends PApplet
 			ScriptManager.invokeFunction("handle", true);
 			
 			ScriptManager.clearBindings();
+			ScriptManager.unlock();
 		}
 		
 		private void handle(InputEvent e)
 		{
+			ScriptManager.lock();
 			ScriptManager.bindArgument("objectMap", objectMap);
 			ScriptManager.bindArgument("e", e);
 			ScriptManager.bindArgument("replayManager", replayManager);
@@ -298,11 +323,12 @@ public abstract class GameInstance extends PApplet
 			ScriptManager.invokeFunction("handle", true);
 			
 			ScriptManager.clearBindings();
-
+			ScriptManager.unlock();
 		}
 		
 		private void handle(SpawnEvent e)
 		{
+			ScriptManager.lock();
 			ScriptManager.bindArgument("objectMap", objectMap);
 			ScriptManager.bindArgument("e", e);
 			ScriptManager.bindArgument("instance", thisInstance);
@@ -312,6 +338,7 @@ public abstract class GameInstance extends PApplet
 			ScriptManager.invokeFunction("handle", true);
 			
 			ScriptManager.clearBindings();
+			ScriptManager.unlock();
 		}
 		
 		private void handleFromQueue(long cTime, ConcurrentLinkedQueue<GameEvent> queue)
@@ -487,6 +514,7 @@ public abstract class GameInstance extends PApplet
 		
 		private void handle(CollisionEvent e)
 		{
+			ScriptManager.lock();
 			ScriptManager.bindArgument("objectMap", objectMap);
 			ScriptManager.bindArgument("e", e);
 			ScriptManager.bindArgument("instance", thisInstance);
@@ -496,10 +524,12 @@ public abstract class GameInstance extends PApplet
 			ScriptManager.invokeFunction("handle", false);
 			
 			ScriptManager.clearBindings();
+			ScriptManager.unlock();
 		}
 		
 		private void handle(InputEvent e)
 		{
+			ScriptManager.lock();
 			ScriptManager.bindArgument("objectMap", objectMap);
 			ScriptManager.bindArgument("e", e);
 			ScriptManager.bindArgument("replayManager", replayManager);
@@ -509,10 +539,12 @@ public abstract class GameInstance extends PApplet
 			ScriptManager.invokeFunction("handle", false);
 			
 			ScriptManager.clearBindings();
+			ScriptManager.unlock();
 		}
 		
 		private void handle(DeathEvent e)
 		{
+			ScriptManager.lock();
 			ScriptManager.bindArgument("objectMap", objectMap);
 			ScriptManager.bindArgument("e", e);
 			ScriptManager.bindArgument("instance", thisInstance);
@@ -522,10 +554,12 @@ public abstract class GameInstance extends PApplet
 			ScriptManager.invokeFunction("handle", false);
 			
 			ScriptManager.clearBindings();
+			ScriptManager.unlock();
 		}
 		
 		private void handle(SpawnEvent e)
 		{
+			ScriptManager.lock();
 			ScriptManager.bindArgument("objectMap", objectMap);
 			ScriptManager.bindArgument("e", e);
 			ScriptManager.bindArgument("instance", thisInstance);
@@ -535,10 +569,12 @@ public abstract class GameInstance extends PApplet
 			ScriptManager.invokeFunction("handle", false);
 			
 			ScriptManager.clearBindings();
+			ScriptManager.unlock();
 		}
 		
 		private void handle(DespawnEvent e)
 		{
+			ScriptManager.lock();
 			ScriptManager.bindArgument("objectMap", objectMap);
 			ScriptManager.bindArgument("e", e);
 			ScriptManager.bindArgument("instance", thisInstance);
@@ -548,6 +584,7 @@ public abstract class GameInstance extends PApplet
 			ScriptManager.invokeFunction("handle", false);
 			
 			ScriptManager.clearBindings();
+			ScriptManager.unlock();
 		}
 	}
 

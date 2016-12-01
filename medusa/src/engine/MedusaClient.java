@@ -238,6 +238,8 @@ public class MedusaClient extends GameInstance
 		{
 			try
 			{
+				setGameTitle((String) networkInput.readObject());
+				
 				initTimeline();
 						
 				initObjects();

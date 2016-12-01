@@ -1,0 +1,13 @@
+parent.fill(r,g,b);
+parent.stroke(0);
+parent.beginShape();
+parent.vertex(x, y + height / 2);
+parent.vertex(x + width / 4, y + height / 2);
+parent.vertex(x + width / 4, y);
+parent.vertex(x + (width / 4) * 3, y);
+parent.vertex(x + (width / 4) * 3, y + height / 2);
+parent.vertex(x + width, y + height / 2);
+parent.vertex(x + width, y + height);
+parent.vertex(x, y + height);
+parent.vertex(x, y + height / 2);
+parent.endShape();

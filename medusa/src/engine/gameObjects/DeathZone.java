@@ -1,8 +1,8 @@
 package engine.gameObjects;
 
+import engine.GameInstance;
 import engine.gameObjects.objectClasses.EffectOnContact;
 import engine.gameObjects.objectClasses.RenderableObject;
-import processing.core.PApplet;
 
 public class DeathZone
 		extends GameObject implements EffectOnContact, RenderableObject
@@ -36,7 +36,7 @@ public class DeathZone
 	}
 	
 	@Override
-	public void display(PApplet parent)
+	public void display(GameInstance parent)
 	{
 		if (DeathZone.DEBUG)
 		{

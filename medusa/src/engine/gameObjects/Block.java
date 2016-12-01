@@ -1,7 +1,7 @@
 package engine.gameObjects;
 
+import engine.GameInstance;
 import engine.gameObjects.objectClasses.RenderableObject;
-import processing.core.PApplet;
 
 /**
  * A generic "block" game object
@@ -41,7 +41,7 @@ public class Block extends GameObject implements RenderableObject
 	 * Defines rendering behavior for Block objects (non-Javadoc)
 	 * @see engine.GameObject#display()
 	 */
-	public synchronized void display(PApplet parent)
+	public synchronized void display(GameInstance parent)
 	{
 		parent.fill(0);
 		parent.stroke(100);

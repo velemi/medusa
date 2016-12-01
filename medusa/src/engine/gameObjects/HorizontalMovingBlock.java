@@ -50,10 +50,12 @@ public class HorizontalMovingBlock extends Block implements PhysicsObject
 	@Override
 	public synchronized void doPhysics(GameInstance instance)
 	{
+		ScriptManager.lock();
 		exposeScriptingObjects(instance);
 		ScriptManager.loadScript("scripts/platformer/movingBlock_behaviour.js");
 		updateValues();
 		ScriptManager.clearBindings();
+		ScriptManager.unlock();
 	}
 
 	public int getMovementDirection()
