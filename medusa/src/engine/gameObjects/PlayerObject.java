@@ -165,7 +165,7 @@ public class PlayerObject
 	 * (non-Javadoc)
 	 * @see engine.GameObject#display()
 	 */
-	public synchronized void display(GameInstance parent)
+	public void display(GameInstance parent)
 	{
 		ScriptManager.lock();
 		
