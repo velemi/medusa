@@ -8,7 +8,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import engine.gameEvents.GameEvent;
-import engine.gameEvents.InputEvent;
 import engine.gameEvents.NullEvent;
 
 public class EventManager
@@ -19,8 +18,6 @@ public class EventManager
 	ConcurrentHashMap<UUID, EventQueue> eventQueues = new ConcurrentHashMap<UUID, EventQueue>();
 	
 	EventQueue readyQueue = new EventQueue(null);
-	
-	private ArrayList<GameEvent> tempList = new ArrayList<GameEvent>();
 	
 	private long gvt;
 	
@@ -123,24 +120,24 @@ public class EventManager
 		
 		if (queueExists(instance))
 		{
-			if (e instanceof InputEvent)
-			{
-				synchronized (tempList)
-				{
-					tempList.clear();
-					tempList.addAll(readyQueue.getQueue());
-					for (GameEvent other : tempList)
-					{
-						if (other instanceof InputEvent
-								&& other.getTimeStamp() == e.getTimeStamp()
-								&& other.getPriority() >= e.getPriority()
-								&& other.getInstanceID().equals(e.getInstanceID()))
-						{
-							e.setPriority(other.getPriority() + 1);
-						}
-					}
-				}
-			}
+//			if (e instanceof InputEvent)
+//			{
+//				synchronized (tempList)
+//				{
+//					tempList.clear();
+//					tempList.addAll(readyQueue.getQueue());
+//					for (GameEvent other : tempList)
+//					{
+//						if (other instanceof InputEvent
+//								&& other.getTimeStamp() == e.getTimeStamp()
+//								&& other.getPriority() >= e.getPriority()
+//								&& other.getInstanceID().equals(e.getInstanceID()))
+//						{
+//							e.setPriority(other.getPriority() + 1);
+//						}
+//					}
+//				}
+//			}
 			
 			eventQueues.get(instance).add(e);
 			

@@ -1,11 +1,11 @@
-parent.fill(r,g,b);
-parent.stroke(0);
+parent.fill(0,200,0);
+parent.stroke(0,200,0);
 parent.beginShape();
 parent.vertex(x, y + height / 2);
-parent.vertex(x + width / 4, y + height / 2);
-parent.vertex(x + width / 4, y);
-parent.vertex(x + (width / 4) * 3, y);
-parent.vertex(x + (width / 4) * 3, y + height / 2);
+parent.vertex(x + (width / 8) * 3, y + height / 2);
+parent.vertex(x + (width / 8) * 3, y);
+parent.vertex(x + (width / 8) * 5, y);
+parent.vertex(x + (width / 8) * 5, y + height / 2);
 parent.vertex(x + width, y + height / 2);
 parent.vertex(x + width, y + height);
 parent.vertex(x, y + height);

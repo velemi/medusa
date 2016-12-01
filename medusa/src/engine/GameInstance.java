@@ -45,20 +45,48 @@ public abstract class GameInstance extends PApplet
 	
 	protected ReentrantReadWriteLock exeLock = new ReentrantReadWriteLock(true);
 	
+	String gameTitle = "";
+
+	protected UUID instanceID;
+
 	public ReplayManager replayManager = new ReplayManager(this);
 	
 	public EventManager eventManager = new EventManager();
 	
 	GameObjectSet objectMap = new GameObjectSet();
 	
-	protected UUID instanceID;
-	
 	Timeline gameTimeline;
 	
 	long currentTime;
 	
-	String gameTitle = "";
+	long inputTime = 0;
 	
+	int inputCount = 0;
+	
+	protected void pauseExeAndTime()
+	{
+		exeLock.writeLock().lock();
+		
+		gameTimeline.pause();
+	}
+
+	protected void resumeExeAndTime()
+	{
+		gameTimeline.resume();
+		
+		exeLock.writeLock().unlock();
+	}
+
+	public UUID getInstanceID()
+	{
+		return this.instanceID;
+	}
+
+	public long getCurrentTime()
+	{
+		return currentTime;
+	}
+
 	public void setGameTitle(String title)
 	{
 		synchronized(gameTitle)
@@ -85,15 +113,6 @@ public abstract class GameInstance extends PApplet
 		objectMap.removeFromSet(object);
 	}
 	
-	public boolean checkForPhysicalCollision(double x, double y, double w,
-			double h)
-	{
-		if (!replayManager.playing)
-			return objectMap.checkPhysCollision(x, y, w, h);
-		else
-			return replayManager.rObjects.checkPhysCollision(x, y, w, h);
-	}
-	
 	public PlayerObject createNewPlayer()
 	{
 		ArrayList<GameObject> spawns = objectMap.getObjectsOfClass(SpawnPoint.class);
@@ -117,6 +136,43 @@ public abstract class GameInstance extends PApplet
 		return newPlayer;
 	}
 	
+	public ArrayList<GameObject> getColliding(GameObject o)
+	{
+		if (!replayManager.playing)
+			return objectMap.getColliding(o, false);
+		else
+			return replayManager.rObjects.getColliding(o, false);
+	}
+	
+	public ArrayList<GameObject> getPhysicalCollisions(double x, double y,
+			double w, double h)
+	{
+		if (!replayManager.playing)
+			return objectMap.getColliding(x, y, w, h, true);
+		else
+			return replayManager.rObjects.getColliding(x, y, w, h, true);
+	}
+
+	public boolean checkForPhysicalCollision(double x, double y, double w,
+			double h)
+	{
+		if (!replayManager.playing)
+			return objectMap.checkPhysCollision(x, y, w, h);
+		else
+			return replayManager.rObjects.checkPhysCollision(x, y, w, h);
+	}
+
+	public abstract void queueEvent(GameEvent e, boolean propagate);
+	
+	/*
+	 * Defines PApplet settings for size() and smooth() values. (non-Javadoc)
+	 * @see processing.core.PApplet#settings()
+	 */
+	public void settings()
+	{
+		size(SCREEN_WIDTH, SCREEN_HEIGHT);
+	}
+	
 	/*
 	 * Defines behavior to be run once per animation frame of the PApplet.
 	 * (non-Javadoc)
@@ -124,10 +180,11 @@ public abstract class GameInstance extends PApplet
 	 */
 	public void draw()
 	{
-		//System.out.print("start - ");
-		
 		// render the frame & gameObjects
-		background(204);
+		if(getGameTitle().equals("invaders"))
+			background(0);
+		else
+			background(204);
 		
 		if (replayManager.isRecording())
 		{
@@ -159,62 +216,8 @@ public abstract class GameInstance extends PApplet
 				((RenderableObject) o).display(this);
 			}
 		}
-		
-		//System.out.println("end");
 	}
-	
-	public ArrayList<GameObject> getColliding(GameObject o)
-	{
-		if (!replayManager.playing)
-			return objectMap.getColliding(o, false);
-		else
-			return replayManager.rObjects.getColliding(o, false);
-	}
-	
-	public long getCurrentTime()
-	{
-		return currentTime;
-	}
-	
-	public UUID getInstanceID()
-	{
-		return this.instanceID;
-	}
-	
-	public ArrayList<GameObject> getPhysicalCollisions(double x, double y,
-			double w, double h)
-	{
-		if (!replayManager.playing)
-			return objectMap.getColliding(x, y, w, h, true);
-		else
-			return replayManager.rObjects.getColliding(x, y, w, h, true);
-	}
-	
-	public abstract void queueEvent(GameEvent e, boolean propagate);
-	
-	/*
-	 * Defines PApplet settings for size() and smooth() values. (non-Javadoc)
-	 * @see processing.core.PApplet#settings()
-	 */
-	public void settings()
-	{
-		size(SCREEN_WIDTH, SCREEN_HEIGHT);
-	}
-	
-	protected void pauseExeAndTime()
-	{
-		exeLock.writeLock().lock();
-		
-		gameTimeline.pause();
-	}
-	
-	protected void resumeExeAndTime()
-	{
-		gameTimeline.resume();
-		
-		exeLock.writeLock().unlock();
-	}
-	
+
 	public class ReplayManager
 	{
 		private GameReplay replay = null;
@@ -273,7 +276,10 @@ public abstract class GameInstance extends PApplet
 			ScriptManager.bindArgument("e", e);
 			ScriptManager.bindArgument("instance", thisInstance);
 			
-			ScriptManager.loadScript("scripts/platformer/collisionEvent_handling.js");
+			if (getGameTitle().equals("platform"))
+				ScriptManager.loadScript("scripts/platformer/collisionEvent_handling.js");
+			else if (getGameTitle().equals("invaders"))
+				ScriptManager.loadScript("scripts/invaders/collisionEvent_handling.js");
 			
 			ScriptManager.invokeFunction("handle", true);
 			
@@ -288,7 +294,10 @@ public abstract class GameInstance extends PApplet
 			ScriptManager.bindArgument("e", e);
 			ScriptManager.bindArgument("instance", thisInstance);
 			
-			ScriptManager.loadScript("scripts/platformer/deathEvent_handling.js");
+			if (getGameTitle().equals("platform"))
+				ScriptManager.loadScript("scripts/platformer/deathEvent_handling.js");
+			else if (getGameTitle().equals("invaders"))
+				ScriptManager.loadScript("scripts/invaders/deathEvent_handling.js");
 			
 			ScriptManager.invokeFunction("handle", true);
 			
@@ -519,7 +528,10 @@ public abstract class GameInstance extends PApplet
 			ScriptManager.bindArgument("e", e);
 			ScriptManager.bindArgument("instance", thisInstance);
 			
-			ScriptManager.loadScript("scripts/platformer/collisionEvent_handling.js");
+			if (getGameTitle().equals("platform"))
+				ScriptManager.loadScript("scripts/platformer/collisionEvent_handling.js");
+			else if (getGameTitle().equals("invaders"))
+				ScriptManager.loadScript("scripts/invaders/collisionEvent_handling.js");
 			
 			ScriptManager.invokeFunction("handle", false);
 			
@@ -549,7 +561,10 @@ public abstract class GameInstance extends PApplet
 			ScriptManager.bindArgument("e", e);
 			ScriptManager.bindArgument("instance", thisInstance);
 			
-			ScriptManager.loadScript("scripts/platformer/deathEvent_handling.js");
+			if (getGameTitle().equals("platform"))
+				ScriptManager.loadScript("scripts/platformer/deathEvent_handling.js");
+			else if (getGameTitle().equals("invaders"))
+				ScriptManager.loadScript("scripts/invaders/deathEvent_handling.js");
 			
 			ScriptManager.invokeFunction("handle", false);
 			

@@ -33,6 +33,8 @@ public class MedusaClient extends GameInstance
 {
 	public static final boolean DEBUG = GameInstance.DEBUG;
 	
+	private String leftState = "unpressed";
+	
 	/** This game client's PlayerObject */
 	private PlayerObject playerObject;
 	
@@ -273,26 +275,39 @@ public class MedusaClient extends GameInstance
 	 */
 	public void keyPressed()
 	{
-		String inputString = "";
-		
-		if (key == CODED)
+		long curTime = gameTimeline.getTime();
+	
+		if (inputTime < curTime)
 		{
-			if (keyCode == LEFT)
-			{
-				inputString = "LEFT PRESSED";
-			}
-			else if (keyCode == RIGHT)
-			{
-				inputString = "RIGHT PRESSED";
-			}
-		}
-		else if (key == ' ')
-		{
-			inputString = "JUMP PRESSED";
+			inputTime = curTime;
+			
+			inputCount = 0;
 		}
 		
-		if (!inputString.equals(""))
-			queueEvent(new InputEvent(gameTimeline.getTime() + 1, getInstanceID(), inputString, playerObject), true);
+		if (!replayManager.isPlaying())
+		{
+			String inputString = "";
+			
+			if (key == CODED)
+			{
+				if (keyCode == LEFT)
+				{
+					inputString = "LEFT PRESSED";
+				}
+				else if (keyCode == RIGHT)
+				{
+					inputString = "RIGHT PRESSED";
+				}
+			}
+			else if (key == ' ')
+			{
+				inputString = "JUMP PRESSED";
+			}
+			
+			if (!inputString.equals(""))
+				queueEvent(new InputEvent(inputTime + 1, inputCount,
+						getInstanceID(), inputString, playerObject), true);
+		}
 	}
 	
 	/*
@@ -301,26 +316,39 @@ public class MedusaClient extends GameInstance
 	 */
 	public void keyReleased()
 	{
-		String inputString = "";
+		long curTime = gameTimeline.getTime();
 		
-		if (key == CODED)
+		if (inputTime < curTime)
 		{
-			if (keyCode == LEFT)
-			{
-				inputString = "LEFT RELEASED";
-			}
-			else if (keyCode == RIGHT)
-			{
-				inputString = "RIGHT RELEASED";
-			}
-		}
-		else if (key == ' ')
-		{
-			inputString = "JUMP RELEASED";
+			inputTime = curTime;
+			
+			inputCount = 0;
 		}
 		
-		if (!inputString.equals(""))
-			queueEvent(new InputEvent(gameTimeline.getTime() + 1, getInstanceID(), inputString, playerObject), true);
+		if (!replayManager.isPlaying())
+		{
+			String inputString = "";
+			
+			if (key == CODED)
+			{
+				if (keyCode == LEFT)
+				{
+					inputString = "LEFT RELEASED";
+				}
+				else if (keyCode == RIGHT)
+				{
+					inputString = "RIGHT RELEASED";
+				}
+			}
+			else if (key == ' ')
+			{
+				inputString = "JUMP RELEASED";
+			}
+			
+			if (!inputString.equals(""))
+				queueEvent(new InputEvent(inputTime + 1, inputCount,
+						getInstanceID(), inputString, playerObject), true);
+		}
 	}
 	
 	@Override

@@ -31,6 +31,14 @@ public class MedusaServer extends GameInstance
 {
 	public static final boolean DEBUG = GameInstance.DEBUG;
 	
+	private ServerLogicThread serverLogicThread = new ServerLogicThread();
+
+	/**
+	 * The list of GameClientHandler threads. Should contain exactly one for
+	 * each active game client connection.
+	 */
+	private ArrayList<ClientHandler> clientList = new ArrayList<ClientHandler>();
+
 	@Override
 	public void queueEvent(GameEvent e, boolean propagate)
 	{
@@ -55,8 +63,149 @@ public class MedusaServer extends GameInstance
 		exeLock.readLock().unlock();
 	}
 	
-	private ServerLogicThread serverLogicThread = new ServerLogicThread();
+	private void selectGame()
+	{
+		Scanner in = new Scanner(System.in);
+		
+		while(gameTitle.equals(""))
+		{
+			System.out.println("Select the game for this server to run:");
+			System.out.println("1: Platform");
+			System.out.println("2: Invaders");
+			
+			System.out.print("\nSelection: ");
+			
+			String inString = in.nextLine();
+			
+			int select = -1;
+			
+			try
+			{
+				select = Integer.parseInt(inString);
+			}
+			catch (NumberFormatException e)
+			{
+				
+			}
+			
+			if (select == 1)
+				setGameTitle("platform");
+			else if (select == 2)
+				setGameTitle("invaders");
+			
+			if (gameTitle.equals(""))
+				System.out.println("\nPlease make a valid selection.\n");
+		}
+		
+		in.close();
+	}
+
+	/** Performs initial setup of GameObjects for this server */
+	private void setUpGameObjects()
+	{
+		ScriptManager.lock();
+		ScriptManager.bindArgument("instance", thisInstance);
+		
+		if (getGameTitle().equals("platform"))
+			ScriptManager.loadScript("scripts/platformer/gameObject_setup.js");
+		else if (getGameTitle().equals("invaders"))
+			ScriptManager.loadScript("scripts/invaders/gameObject_setup.js");
+		
+		ScriptManager.clearBindings();
+		ScriptManager.unlock();
+	}
+
+	@Override
+	public void setup()
+	{
+		selectGame();
+		
+		System.out.println("\nNow starting game \"" + getGameTitle()
+				+ "\"...\n\n");
+		
+		instanceID = UUID.randomUUID();
+		
+		setUpGameObjects();
+		
+		eventManager.registerHandler(new CoreEventHandler(), new String[ ] {
+				"CollisionEvent", "InputEvent", "DeathEvent", "SpawnEvent",
+				"DespawnEvent" });
+		
+		eventManager.addQueue(instanceID);
+		eventManager.setGVT(0);
+		
+		gameTimeline = new Timeline(1000000000L / TARGET_FRAMERATE);
+		
+		ConnectionListener connectionListener = new ConnectionListener();
+		connectionListener.start();
+		serverLogicThread.start();
+	}
 	
+	/*
+	 * Defines behavior to be run once when keys are pressed. May run repeatedly
+	 * (after system-dependent delay) if keys are held. (non-Javadoc)
+	 * @see processing.core.PApplet#keyPressed()
+	 */
+	public void keyPressed()
+	{
+		long curTime = gameTimeline.getTime();
+		
+		if (inputTime < curTime)
+		{
+			inputTime = curTime;
+			
+			inputCount = 0;
+		}
+		
+		if (!replayManager.isPlaying())
+		{
+			String inputString = "";
+			if (key == 'R' || key == 'r')
+			{
+				if (!replayManager.isRecording())
+				{
+					inputString = "START RECORD";
+				}
+				else
+				{
+					inputString = "STOP RECORD";
+				}
+			}
+			else if (key == 'K' || key == 'k')
+			{
+				inputString = "PLAYBACK60";
+			}
+			else if (key == 'J' || key == 'j')
+			{
+				inputString = "PLAYBACK30";
+			}
+			else if (key == 'L' || key == 'l')
+			{
+				inputString = "PLAYBACK120";
+			}
+			
+			if (!inputString.equals(""))
+			{
+				queueEvent(new InputEvent(inputTime + 1, inputCount,
+						getInstanceID(), inputString, null), true);
+				
+				inputCount++;
+			}
+		}
+	}
+
+	/** Runs this game server */
+	public void runServer()
+	{
+		PApplet.main("engine.MedusaServer");
+	}
+	
+	public static void main(String[] args)
+	{
+		MedusaServer gameServer = new MedusaServer();
+		gameServer.runServer();
+	}
+
 	/**
 	 * The thread which handles the game logic loop
 	 * 
@@ -79,7 +228,7 @@ public class MedusaServer extends GameInstance
 			super.run();
 		}
 	}
-	
+
 	/**
 	 * A thread which listens for incoming game client connections. Upon a
 	 * successful connection, it then starts a GameClientHandler for that
@@ -151,13 +300,7 @@ public class MedusaServer extends GameInstance
 			}
 		}
 	}
-	
-	/**
-	 * The list of GameClientHandler threads. Should contain exactly one for
-	 * each active game client connection.
-	 */
-	private ArrayList<ClientHandler> clientList = new ArrayList<ClientHandler>();
-	
+
 	/**
 	 * A subclass which handles I/O between this game server and a single game
 	 * client.
@@ -338,116 +481,5 @@ public class MedusaServer extends GameInstance
 			
 			exeLock.writeLock().unlock();
 		}
-	}
-	
-	/** Performs initial setup of GameObjects for this server */
-	private void setUpGameObjects()
-	{
-		ScriptManager.lock();
-		ScriptManager.bindArgument("instance", thisInstance);
-		
-		ScriptManager.loadScript("scripts/platformer/gameObject_setup.js");
-		
-		ScriptManager.clearBindings();
-		ScriptManager.unlock();
-	}
-	
-	@Override
-	public void setup()
-	{
-
-		selectGame();
-		
-		if (!gameTitle.equals(""))
-		{
-			System.out.println("\nNow preparing to start game \"" + getGameTitle() + "\"...\n\n");
-			
-			instanceID = UUID.randomUUID();
-			
-			setUpGameObjects();
-			
-			eventManager.registerHandler(new CoreEventHandler(), new String[ ] {
-					"CollisionEvent", "InputEvent", "DeathEvent", "SpawnEvent", "DespawnEvent" });
-			
-			eventManager.addQueue(instanceID);
-			eventManager.setGVT(0);
-					
-			gameTimeline = new Timeline(1000000000L / TARGET_FRAMERATE);
-			
-			ConnectionListener connectionListener = new ConnectionListener();
-			connectionListener.start();
-			serverLogicThread.start();
-		}
-	}
-	
-	/*
-	 * Defines behavior to be run once when keys are pressed. May run repeatedly
-	 * (after system-dependent delay) if keys are held. (non-Javadoc)
-	 * @see processing.core.PApplet#keyPressed()
-	 */
-	public void keyPressed()
-	{
-		if (!replayManager.isPlaying())
-		{
-			String inputString = "";
-			if (key == 'R' || key == 'r')
-			{
-				if (!replayManager.isRecording())
-				{
-					inputString = "START RECORD";
-				}
-				else
-				{
-					inputString = "STOP RECORD";
-				}
-			}
-			else if (key == 'K' || key == 'k')
-			{
-				inputString = "PLAYBACK60";
-			}
-			else if (key == 'J' || key == 'j')
-			{
-				inputString = "PLAYBACK30";
-			}
-			else if (key == 'L' || key == 'l')
-			{
-				inputString = "PLAYBACK120";
-			}
-			
-			if (!inputString.equals(""))
-				queueEvent(new InputEvent(gameTimeline.getTime() + 1, getInstanceID(), inputString, null), true);
-		}
-	}
-
-	private void selectGame()
-	{
-		System.out.println("Select the game for this server to run:");
-		System.out.println("1: Platform");
-		System.out.println("2: Invaders");
-		
-		System.out.print("\nSelection: ");
-		
-		Scanner in = new Scanner(System.in);
-		
-		int select = in.nextInt();
-		
-		in.close();
-		
-		if (select == 1)
-			setGameTitle("platform");
-		else if (select == 2)
-			setGameTitle("invaders");
-	}
-	
-	/** Runs this game server */
-	public void runServer()
-	{
-		PApplet.main("engine.MedusaServer");
-	}
-	
-	public static void main(String[] args)
-	{
-		MedusaServer gameServer = new MedusaServer();
-		gameServer.runServer();
 	}
 }

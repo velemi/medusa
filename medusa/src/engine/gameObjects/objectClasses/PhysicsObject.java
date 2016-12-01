@@ -4,5 +4,5 @@ import engine.GameInstance;
 
 public interface PhysicsObject
 {
-	public void doPhysics(GameInstance parent);
+	public void doPhysics(GameInstance instance);
 }

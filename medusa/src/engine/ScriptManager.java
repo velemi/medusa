@@ -17,7 +17,7 @@ public class ScriptManager {
 	/* The Invocable reference to the engine. */
 	private static Invocable js_invocable = (Invocable) js_engine;
 	
-	private static ReentrantLock lock = new ReentrantLock();
+	private static ReentrantLock lock = new ReentrantLock(true);
 	
 	public static void lock()
 	{

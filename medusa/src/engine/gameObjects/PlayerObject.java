@@ -186,11 +186,6 @@ public class PlayerObject
 		ScriptManager.clearBindings();
 		
 		ScriptManager.unlock();
-		
-//		parent.fill(color[0], color[1], color[2]);
-//		parent.stroke(0);
-//		parent.rect(x, y, width, height);
-		
 	}
 	
 	public void setLeftPressed(boolean leftPressed)
@@ -255,7 +250,12 @@ public class PlayerObject
 	{
 		ScriptManager.lock();
 		exposeScriptingObjects(instance);
-		ScriptManager.loadScript("scripts/platformer/playerObject_behaviour.js");
+		
+		if (instance.getGameTitle().equals("platform"))
+			ScriptManager.loadScript("scripts/platformer/playerObject_behaviour.js");
+		else if (instance.getGameTitle().equals("invaders"))
+			ScriptManager.loadScript("scripts/invaders/playerObject_behaviour.js");
+		
 		updateValues();
 		ScriptManager.clearBindings();
 		ScriptManager.unlock();

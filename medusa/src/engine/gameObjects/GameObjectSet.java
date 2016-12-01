@@ -38,10 +38,6 @@ public class GameObjectSet implements Serializable
 			
 			if (o instanceof PlayerObject)
 				playerObjects.put(((PlayerObject) o).parentInstanceID, (PlayerObject) o);
-//			if (o instanceof RenderableObject && !renderables.)
-//				renderables.add(o);
-//			if (o instanceof SpawnPoint)
-//				spawnPoints.add(o);
 		}
 		
 		lock.writeLock().unlock();
@@ -57,10 +53,6 @@ public class GameObjectSet implements Serializable
 			
 			if (o instanceof PlayerObject)
 				playerObjects.remove(((PlayerObject) o).parentInstanceID);
-//			if (o instanceof RenderableObject)
-//				renderables.remove((RenderableObject) o);
-//			if (o instanceof SpawnPoint)
-//				spawnPoints.remove(o);
 		}
 		
 		lock.writeLock().unlock();
